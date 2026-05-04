@@ -11,7 +11,8 @@
     "lint": "pnpm exec eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "a11y": "vitest run a11y.test"
+    "a11y": "vitest run a11y.test",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -19,9 +19,11 @@
     "lint:fix": "turbo run lint -- --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}\"",
+    "coverage": "turbo run coverage",
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps chromium",
     "a11y": "turbo run a11y",
+    "doctor": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
@@ -29,6 +31,7 @@
     "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.3",

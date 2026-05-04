@@ -1,0 +1,182 @@
+// Jobetes — API persistence schema (Phase 1).
+//
+// Phase 0 uses an in-memory store. This schema is the Phase-1 contract,
+// generated and validated in CI but NOT migrated until DATABASE_URL is set.
+//
+// Region: Postgres in EU (Supabase managed) — GDPR data residency.
+// Encryption-at-rest: AES-256 (Supabase default).
+// Backups: daily, encrypted, 30-day retention (Phase 1 ops choice).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── enums ────────────────────────────────────────────────────────────────────
+
+enum Locale {
+  ar
+  de
+  en
+}
+
+enum Gender {
+  female
+  male
+  other
+  prefer_not_to_say
+}
+
+enum TriageUrgency {
+  emergency
+  soon
+  routine
+  self_care_likely
+}
+
+enum AppointmentStatus {
+  requested
+  confirmed
+  rescheduled
+  cancelled
+  completed
+}
+
+// ─── tables ───────────────────────────────────────────────────────────────────
+
+model Patient {
+  id              String    @id @default(uuid()) @db.Uuid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Identity (encrypted at the application layer in Phase 1)
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime  @db.Date
+  gender          Gender
+  preferredLocale Locale
+  phone           String    @unique
+  email           String?
+
+  intakes         Intake[]
+  appointments    Appointment[]
+  messages        Message[]
+
+  @@index([phone])
+  @@index([email])
+}
+
+model Intake {
+  id                    String    @id @default(uuid()) @db.Uuid
+  createdAt             DateTime  @default(now())
+
+  patient               Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId             String    @db.Uuid
+
+  // Symptom payload — kept as JSONB for forward-compatibility with new fields
+  // without migrations. Schema-validated against PatientIntakeSchema (Zod) at
+  // the API layer.
+  payload               Json
+
+  severity              Int
+  symptomDurationDays   Int?
+  ramadanContext        Boolean   @default(false)
+  isFasting             Boolean   @default(false)
+  prefersDoctorGender   Gender?
+
+  // Most recent triage attached to this intake (one-to-one)
+  triage                Triage?
+
+  consent               Consent   @relation(fields: [consentId], references: [id])
+  consentId             String    @unique @db.Uuid
+
+  @@index([patientId, createdAt])
+}
+
+model Consent {
+  id                      String    @id @default(uuid()) @db.Uuid
+  acceptedAt              DateTime  @default(now())
+  privacyPolicyVersion    String
+  presentedLocale         Locale
+
+  termsOfService          Boolean
+  privacyPolicy           Boolean
+  processingHealthData    Boolean
+  crossBorderTransfer     Boolean
+  marketingOptIn          Boolean   @default(false)
+  familyAccessOptIn       Boolean   @default(false)
+
+  intake                  Intake?
+}
+
+model Triage {
+  id                       String         @id @default(uuid()) @db.Uuid
+  createdAt                DateTime       @default(now())
+
+  intake                   Intake         @relation(fields: [intakeId], references: [id], onDelete: Cascade)
+  intakeId                 String         @unique @db.Uuid
+
+  urgency                  TriageUrgency
+  redFlags                 String[]
+  topicsForConsultation    String[]
+  patientFriendlySummary   String
+  disclaimer               String
+
+  // Provider metadata for auditability
+  provider                 String
+  model                    String
+  promptVersion            String
+  latencyMs                Int
+  tokensIn                 Int?
+  tokensOut                Int?
+}
+
+model Appointment {
+  id          String             @id @default(uuid()) @db.Uuid
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  patient     Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId   String             @db.Uuid
+
+  status      AppointmentStatus  @default(requested)
+  requestedAt DateTime           @default(now())
+  scheduledAt DateTime?
+  notes       String?            // doctor-only notes
+
+  @@index([patientId, status])
+}
+
+model Message {
+  id          String    @id @default(uuid()) @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId   String    @db.Uuid
+
+  fromRole    String    // "patient" | "doctor"
+  body        String
+  locale      Locale
+
+  @@index([patientId, createdAt])
+}
+
+// AuditLog tracks security-relevant events (data access, exports, deletions).
+// PII MUST NOT be written to this table — store IDs and event types only.
+model AuditLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  actorRole   String    // "patient" | "doctor" | "system"
+  actorId     String?   @db.Uuid
+  event       String    // e.g. "intake.created", "patient.exported"
+  resourceId  String?   @db.Uuid
+  metadata    Json?
+
+  @@index([event, createdAt])
+}

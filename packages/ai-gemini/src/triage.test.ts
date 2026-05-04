@@ -35,6 +35,39 @@ describe('runTriage with mock provider (no API key)', () => {
   });
 });
 
+describe('runTriage with malformed model output', () => {
+  it('falls back gracefully on non-JSON response', async () => {
+    const broken = {
+      async generate() {
+        return {
+          text: 'this is not json at all, just prose from a model',
+          modelMeta: { provider: 'mock' as const, model: 'broken', latencyMs: 1 },
+        };
+      },
+    };
+    const result = await runTriage(broken, sampleInput);
+    expect(result.urgency).toBe('routine');
+    expect(result.disclaimer).toMatch(/طارئ|911/u);
+    expect(result.topicsForConsultation.length).toBeGreaterThan(0);
+  });
+
+  it('fills missing fields from partial JSON', async () => {
+    const partial = {
+      async generate() {
+        return {
+          text: JSON.stringify({ urgency: 'soon' }),
+          modelMeta: { provider: 'mock' as const, model: 'partial', latencyMs: 1 },
+        };
+      },
+    };
+    const result = await runTriage(partial, { ...sampleInput, preferredLocale: 'de' });
+    expect(result.urgency).toBe('soon');
+    expect(result.disclaimer).toMatch(/112/u);
+    expect(result.redFlags).toEqual([]);
+    expect(result.topicsForConsultation).toEqual([]);
+  });
+});
+
 describe('enhancePrompt with mock provider', () => {
   it('rewrites a raw input', async () => {
     const provider = createGeminiProvider({ apiKey: '' });
