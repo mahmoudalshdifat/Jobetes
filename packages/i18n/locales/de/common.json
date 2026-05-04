@@ -54,5 +54,14 @@
   "intake.submit": "Aufnahme absenden",
   "intake.success": "Danke. Die Klinik meldet sich in Kürze.",
   "emergency.banner": "Bei einem medizinischen Notfall wählen Sie 112 (Deutschland) oder 911 (Jordanien).",
-  "footer.copyright": "© 2026 Dr. Mahmoud Al-Shdaifat. Alle Rechte vorbehalten."
+  "footer.copyright": "© 2026 Dr. Mahmoud Al-Shdaifat. Alle Rechte vorbehalten.",
+  "auth.login.title": "Anmelden",
+  "auth.login.subtitle": "Geben Sie Ihre E-Mail an — wir schicken Ihnen einen Einmal-Link.",
+  "auth.login.submit": "Link schicken",
+  "auth.login.checkEmail.title": "Sehen Sie in Ihr Postfach",
+  "auth.login.checkEmail.body": "Wir haben Ihnen einen Anmelde-Link geschickt. Er läuft in 60 Minuten ab.",
+  "auth.welcome.title": "Sie sind angemeldet",
+  "auth.welcome.body": "Sie können nun Ihre Termine und vorherigen Aufnahmen sehen.",
+  "auth.signOut": "Abmelden",
+  "nav.login": "Anmelden"
 }

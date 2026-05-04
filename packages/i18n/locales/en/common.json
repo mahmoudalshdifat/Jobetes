@@ -54,5 +54,14 @@
   "intake.submit": "Submit intake",
   "intake.success": "Thank you. The clinic will contact you shortly.",
   "emergency.banner": "If this is a medical emergency, dial 112 (Germany) or 911 (Jordan).",
-  "footer.copyright": "© 2026 Dr. Mahmoud Al-Shdaifat. All rights reserved."
+  "footer.copyright": "© 2026 Dr. Mahmoud Al-Shdaifat. All rights reserved.",
+  "auth.login.title": "Sign in",
+  "auth.login.subtitle": "Enter your email — we will send you a one-time link.",
+  "auth.login.submit": "Send me a link",
+  "auth.login.checkEmail.title": "Check your inbox",
+  "auth.login.checkEmail.body": "We sent you a sign-in link. It expires in 60 minutes.",
+  "auth.welcome.title": "You are signed in",
+  "auth.welcome.body": "You can now view your appointments and previous intakes.",
+  "auth.signOut": "Sign out",
+  "nav.login": "Sign in"
 }

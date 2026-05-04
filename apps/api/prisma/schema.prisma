@@ -63,12 +63,17 @@ model Patient {
   phone           String    @unique
   email           String?
 
+  // Supabase Auth user — set when the patient claims their account.
+  // Nullable because a patient can submit an intake before signing up.
+  supabaseUserId  String?   @unique @db.Uuid
+
   intakes         Intake[]
   appointments    Appointment[]
   messages        Message[]
 
   @@index([phone])
   @@index([email])
+  @@index([supabaseUserId])
 }
 
 model Intake {

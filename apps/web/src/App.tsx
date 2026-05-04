@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmergencyBanner, LangToggle } from '@jobetes/ui';
 import type { Locale } from '@jobetes/shared-schemas';
+import { AuthProvider, useAuth } from './auth/AuthContext.js';
 import { HomePage } from './pages/HomePage.js';
 import { DoctorPage } from './pages/DoctorPage.js';
 import { IntakePage } from './pages/IntakePage.js';
 import { LegalPage } from './pages/LegalPage.js';
+import { LoginPage } from './pages/LoginPage.js';
 
-type Route = 'home' | 'doctor' | 'intake' | 'legal';
+type Route = 'home' | 'doctor' | 'intake' | 'legal' | 'login';
 
-export function App(): JSX.Element {
+function AppShell(): JSX.Element {
   const { t, i18n } = useTranslation();
+  const { status, signOut } = useAuth();
   const [route, setRoute] = useState<Route>('home');
 
   return (
@@ -36,6 +39,15 @@ export function App(): JSX.Element {
             <button type="button" onClick={() => setRoute('legal')} className="px-2 py-1">
               {t('nav.legal')}
             </button>
+            {status === 'authenticated' ? (
+              <button type="button" onClick={() => void signOut()} className="px-2 py-1">
+                {t('auth.signOut')}
+              </button>
+            ) : (
+              <button type="button" onClick={() => setRoute('login')} className="px-2 py-1">
+                {t('nav.login')}
+              </button>
+            )}
             <LangToggle
               current={i18n.resolvedLanguage as Locale}
               onChange={(loc) => void i18n.changeLanguage(loc)}
@@ -50,11 +62,20 @@ export function App(): JSX.Element {
         {route === 'doctor' ? <DoctorPage /> : null}
         {route === 'intake' ? <IntakePage /> : null}
         {route === 'legal' ? <LegalPage /> : null}
+        {route === 'login' ? <LoginPage /> : null}
       </main>
 
       <footer className="mt-16 border-t border-ink-strong/10 bg-surface-white py-8 text-center text-sm text-ink-soft">
         <div className="container-reading">{t('footer.copyright')}</div>
       </footer>
     </div>
+  );
+}
+
+export function App(): JSX.Element {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }
