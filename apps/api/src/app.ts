@@ -7,6 +7,7 @@ import { loadConfig, type AppConfig } from './config.js';
 import { loggerOptions } from './logger.js';
 import { attachAuth } from './auth.js';
 import { attachErrorHandler, initObservability } from './observability.js';
+import { registerOpenApi } from './openapi.js';
 import { createIntakeRepo, type IntakeRepo } from './persistence/index.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerDoctorRoutes } from './routes/doctor.js';
@@ -54,6 +55,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(rateLimit, { max: 60, timeWindow: '1 minute' });
   await app.register(sensible);
 
+  await registerOpenApi(app, cfg);
   attachAuth(app, cfg);
 
   await registerHealthRoutes(app);
