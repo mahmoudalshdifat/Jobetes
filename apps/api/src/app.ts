@@ -15,6 +15,7 @@ import { registerDoctorRoutes } from './routes/doctor.js';
 import { registerIntakeRoutes } from './routes/intake.js';
 import { registerAppointmentRoutes } from './routes/appointment.js';
 import { registerMeRoutes } from './routes/me.js';
+import { registerAdminRoutes } from './routes/admin.js';
 import { registerTriageRoutes } from './routes/triage.js';
 
 export type BuildAppOptions = Partial<AppConfig> & {
@@ -88,6 +89,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerIntakeRoutes(app, intakeRepo);
   await registerAppointmentRoutes(app);
   await registerMeRoutes(app, intakeRepo);
+  await registerAdminRoutes(app, intakeRepo);
   await registerTriageRoutes(app, cfg);
 
   return app;
