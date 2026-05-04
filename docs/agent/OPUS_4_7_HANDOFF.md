@@ -83,6 +83,9 @@ Operationalized:
 - **Forget that pnpm workspaces don't hoist binaries to subpackage `node_modules/.bin`.** Add the binary's package as a devDep at the root and use `pnpm exec <bin>` from subpackages, OR add it as a devDep in every consumer. Don't expect a tool listed only in `@jobetes/eslint-config`'s `dependencies` to be invokable from `apps/web`.
 - **Use `import('react').ReactElement` inside ambient declarations.** ESLint's `@typescript-eslint/consistent-type-imports` rule rejects it. Use a top-level `import type { ReactElement } from 'react'` instead.
 - **Set Vite `build.target` lower than `es2022`** if any module uses top-level `await` (e.g. `await i18next.init(...)`). Default Vite target is broader and bricks the build.
+- **Reference `typeof <const>` inside a callback parameter of that const's own initializer.** TypeScript flags TS2502 ("referenced directly or indirectly in its own type annotation"). Hoist the type into a named interface first, then use it in both the const and the callback.
+- **Type a logger parameter as `Logger` from `pino`** when the call site might pass `app.log` (`FastifyBaseLogger`). They are not interchangeable. Use a structural `LogLike = { info: (obj: object, msg?: string) => void }` so the function accepts both.
+- **Forget `prisma generate` in postinstall.** The generated client is what TypeScript imports — without it, every consumer of `@prisma/client` breaks at build. Append `|| true` so the install does not fail in contexts where the schema is absent.
 
 ## 7. Shocking / Surprising
 

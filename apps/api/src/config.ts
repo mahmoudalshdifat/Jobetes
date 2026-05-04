@@ -10,6 +10,7 @@ const ConfigSchema = z.object({
   GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
   GEMINI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   SENTRY_DSN: z.string().optional().default(''),
+  DATABASE_URL: z.string().optional().default(''),
 });
 
 export type AppConfig = z.infer<typeof ConfigSchema>;

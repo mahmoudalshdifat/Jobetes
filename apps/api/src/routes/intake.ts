@@ -1,15 +1,11 @@
-import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { PatientIntakeSchema } from '@jobetes/shared-schemas';
+import type { IntakeRepo } from '../persistence/index.js';
 
-/**
- * In-memory intake store. Phase 0 keeps no persisted patient data on disk —
- * GDPR-friendly. Phase 1 swaps this for a Prisma-backed Postgres adapter
- * in the EU region.
- */
-const store = new Map<string, { id: string; receivedAt: string }>();
-
-export async function registerIntakeRoutes(app: FastifyInstance): Promise<void> {
+export async function registerIntakeRoutes(
+  app: FastifyInstance,
+  repo: IntakeRepo,
+): Promise<void> {
   app.post('/intake', async (request, reply) => {
     const parsed = PatientIntakeSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -18,16 +14,22 @@ export async function registerIntakeRoutes(app: FastifyInstance): Promise<void> 
         issues: parsed.error.issues,
       });
     }
-    const id = randomUUID();
-    const receivedAt = new Date().toISOString();
-    store.set(id, { id, receivedAt });
-    request.log.info({ intakeId: id }, 'intake received');
-    return reply.status(201).send({ id, receivedAt });
+    try {
+      const record = await repo.create(parsed.data);
+      request.log.info(
+        { intakeId: record.id, persistence: repo.kind },
+        'intake received',
+      );
+      return reply.status(201).send(record);
+    } catch (err) {
+      request.log.error({ err }, 'intake persistence failed');
+      return reply.status(500).send({ error: 'persistence_unavailable' });
+    }
   });
 
   app.get('/intake/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const record = store.get(id);
+    const record = await repo.findById(id);
     if (!record) return reply.status(404).send({ error: 'not_found' });
     return record;
   });
