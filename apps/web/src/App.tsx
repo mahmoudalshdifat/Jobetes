@@ -6,10 +6,11 @@ import { AuthProvider, useAuth } from './auth/AuthContext.js';
 import { HomePage } from './pages/HomePage.js';
 import { DoctorPage } from './pages/DoctorPage.js';
 import { IntakePage } from './pages/IntakePage.js';
+import { AppointmentPage } from './pages/AppointmentPage.js';
 import { LegalPage } from './pages/LegalPage.js';
 import { LoginPage } from './pages/LoginPage.js';
 
-type Route = 'home' | 'doctor' | 'intake' | 'legal' | 'login';
+type Route = 'home' | 'doctor' | 'intake' | 'appointment' | 'legal' | 'login';
 
 function AppShell(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -36,6 +37,9 @@ function AppShell(): JSX.Element {
             <button type="button" onClick={() => setRoute('intake')} className="px-2 py-1">
               {t('nav.intake')}
             </button>
+            <button type="button" onClick={() => setRoute('appointment')} className="px-2 py-1">
+              {t('nav.appointment')}
+            </button>
             <button type="button" onClick={() => setRoute('legal')} className="px-2 py-1">
               {t('nav.legal')}
             </button>
@@ -61,6 +65,7 @@ function AppShell(): JSX.Element {
         {route === 'home' ? <HomePage onStartIntake={() => setRoute('intake')} /> : null}
         {route === 'doctor' ? <DoctorPage /> : null}
         {route === 'intake' ? <IntakePage /> : null}
+        {route === 'appointment' ? <AppointmentPage /> : null}
         {route === 'legal' ? <LegalPage /> : null}
         {route === 'login' ? <LoginPage /> : null}
       </main>
