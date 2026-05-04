@@ -95,6 +95,37 @@ export class PrismaIntakeRepo implements IntakeRepo {
     return row ? { id: row.id, receivedAt: row.createdAt.toISOString() } : null;
   }
 
+  async findByUser(supabaseUserId: string): Promise<IntakeRecord[]> {
+    const rows = await this.client.intake.findMany({
+      where: { patient: { supabaseUserId } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, createdAt: true },
+    });
+    return rows.map((r) => ({ id: r.id, receivedAt: r.createdAt.toISOString() }));
+  }
+
+  async claimByPhone(supabaseUserId: string, phone: string): Promise<string | null> {
+    const patient = await this.client.patient.findUnique({ where: { phone } });
+    if (!patient) return null;
+    if (patient.supabaseUserId === supabaseUserId) return patient.id;
+    if (patient.supabaseUserId && patient.supabaseUserId !== supabaseUserId) {
+      // already claimed by someone else — refuse silently
+      return null;
+    }
+    await this.client.patient.update({
+      where: { id: patient.id },
+      data: { supabaseUserId },
+    });
+    await this.client.auditLog.create({
+      data: {
+        actorRole: 'patient',
+        actorId: patient.id,
+        event: 'patient.claimed',
+      },
+    });
+    return patient.id;
+  }
+
   async count(): Promise<number> {
     return this.client.intake.count();
   }

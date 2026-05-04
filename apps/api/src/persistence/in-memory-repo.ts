@@ -23,6 +23,16 @@ export class InMemoryIntakeRepo implements IntakeRepo {
     return this.store.get(id) ?? null;
   }
 
+  async findByUser(_supabaseUserId: string): Promise<IntakeRecord[]> {
+    // No patient identity concept in Phase 0. Return empty consistently
+    // so the API contract is stable across both adapters.
+    return [];
+  }
+
+  async claimByPhone(_supabaseUserId: string, _phone: string): Promise<string | null> {
+    return null;
+  }
+
   async count(): Promise<number> {
     return this.store.size;
   }

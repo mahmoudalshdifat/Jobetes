@@ -1,0 +1,35 @@
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/**'
+      - 'infrastructure/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.FLY_APP_NAME != '' }}
+    timeout-minutes: 15
+    concurrency:
+      group: fly-deploy-${{ vars.FLY_APP_NAME }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Run database migrations (idempotent)
+        if: ${{ vars.RUN_DB_MIGRATIONS == 'true' }}
+        run: flyctl ssh console -a ${{ vars.FLY_APP_NAME }} -C "node /app/dist/scripts/run-migrations.js" || true
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Deploy
+        run: flyctl deploy --config infrastructure/fly.toml --app ${{ vars.FLY_APP_NAME }} --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

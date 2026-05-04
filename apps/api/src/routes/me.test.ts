@@ -36,12 +36,30 @@ describe('GET /me + GET /me/intakes (with synthesized auth)', () => {
     expect(body.user.email).toBe('test@example.com');
   });
 
-  it('GET /me/intakes returns total + persistence kind', async () => {
+  it('GET /me/intakes returns total + intakes + persistence kind', async () => {
     const res = await app.inject({ method: 'GET', url: '/me/intakes' });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('total');
-    expect(typeof body.total).toBe('number');
-    expect(['memory', 'prisma']).toContain(body.persistence);
+    expect(body.total).toBe(0);
+    expect(body.intakes).toEqual([]);
+    expect(body.persistence).toBe('memory');
+  });
+
+  it('POST /me/claim 400 on invalid phone', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/me/claim',
+      payload: { phone: 'not-e164' },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('POST /me/claim 404 on Phase-0 in-memory adapter (no patient registry)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/me/claim',
+      payload: { phone: '+962799123456' },
+    });
+    expect(res.statusCode).toBe(404);
   });
 });

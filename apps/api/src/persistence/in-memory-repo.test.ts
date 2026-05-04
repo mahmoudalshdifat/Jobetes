@@ -62,4 +62,15 @@ describe('InMemoryIntakeRepo', () => {
     const repo = new InMemoryIntakeRepo();
     await expect(repo.close()).resolves.toBeUndefined();
   });
+
+  it('findByUser returns empty array (Phase-0 has no patient identity)', async () => {
+    const repo = new InMemoryIntakeRepo();
+    await repo.create(sample);
+    expect(await repo.findByUser('any-user')).toEqual([]);
+  });
+
+  it('claimByPhone returns null (Phase-0 has no patient registry)', async () => {
+    const repo = new InMemoryIntakeRepo();
+    expect(await repo.claimByPhone('user', '+962799123456')).toBeNull();
+  });
 });

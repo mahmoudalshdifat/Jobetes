@@ -129,4 +129,76 @@ describe('PrismaIntakeRepo', () => {
     await repo.close();
     expect(calls).toContain('disconnect');
   });
+
+  it('findByUser joins through patient.supabaseUserId', async () => {
+    const findMany = vi.fn(async () => [
+      { id: 'i-1', createdAt: new Date('2026-05-01T00:00:00Z') },
+      { id: 'i-2', createdAt: new Date('2026-05-02T00:00:00Z') },
+    ]);
+    const client = { intake: { findMany } };
+    const repo = new PrismaIntakeRepo(client as never);
+    const result = await repo.findByUser('user-123');
+    expect(findMany).toHaveBeenCalledWith({
+      where: { patient: { supabaseUserId: 'user-123' } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, createdAt: true },
+    });
+    expect(result).toHaveLength(2);
+    expect(result[0]?.id).toBe('i-1');
+  });
+
+  it('claimByPhone links a patient and writes audit log', async () => {
+    const update = vi.fn(async () => ({}));
+    const auditCreate = vi.fn(async () => ({}));
+    const client = {
+      patient: {
+        findUnique: vi.fn(async () => ({ id: 'p-1', supabaseUserId: null })),
+        update,
+      },
+      auditLog: { create: auditCreate },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+    const result = await repo.claimByPhone('user-x', '+962799123456');
+    expect(result).toBe('p-1');
+    expect(update).toHaveBeenCalledOnce();
+    expect(auditCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ event: 'patient.claimed', actorId: 'p-1' }),
+      }),
+    );
+  });
+
+  it('claimByPhone returns null when patient not found', async () => {
+    const client = {
+      patient: { findUnique: vi.fn(async () => null) },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+    expect(await repo.claimByPhone('user-x', '+962799999999')).toBeNull();
+  });
+
+  it('claimByPhone is idempotent when already claimed by same user', async () => {
+    const update = vi.fn();
+    const client = {
+      patient: {
+        findUnique: vi.fn(async () => ({ id: 'p-1', supabaseUserId: 'same-user' })),
+        update,
+      },
+      auditLog: { create: vi.fn() },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+    expect(await repo.claimByPhone('same-user', '+962799123456')).toBe('p-1');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('claimByPhone refuses cross-user takeover', async () => {
+    const client = {
+      patient: {
+        findUnique: vi.fn(async () => ({ id: 'p-1', supabaseUserId: 'someone-else' })),
+        update: vi.fn(),
+      },
+      auditLog: { create: vi.fn() },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+    expect(await repo.claimByPhone('attacker', '+962799123456')).toBeNull();
+  });
 });
