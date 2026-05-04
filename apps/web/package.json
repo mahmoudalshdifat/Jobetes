@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "a11y": "vitest run a11y.test",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "perf:bundle-size": "node scripts/check-bundle-size.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

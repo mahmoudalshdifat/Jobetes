@@ -36,6 +36,8 @@ jobs:
       - run: pnpm test
       - run: pnpm coverage
       - run: pnpm build
+      - name: Bundle-size budget
+        run: pnpm --filter @jobetes/web perf:bundle-size
       - if: always()
         uses: actions/upload-artifact@v4
         with:
