@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      type-defs:
+        patterns: ["@types/*"]
+      lint:
+        patterns: ["eslint*", "@typescript-eslint/*", "prettier*"]
+      test:
+        patterns: ["vitest*", "@testing-library/*", "playwright*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

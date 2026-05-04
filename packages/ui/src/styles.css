@@ -1,0 +1,13 @@
+/* Trust-first design tokens — single source of truth for colors and spacing.
+ * Imported by apps that consume @jobetes/ui via CSS variables.
+ */
+:root {
+  --color-brand-primary: #1B4D7A;
+  --color-brand-secondary: #2C8C9E;
+  --color-surface-warm: #F8F4EE;
+  --color-surface-white: #FFFFFF;
+  --color-ink-strong: #0F1B2D;
+  --color-ink-soft: #4A5568;
+  --color-accent-olive: #6B7F4E;
+  --color-accent-copper: #B8654A;
+}

@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-brand-primary: #1B4D7A;
+    --color-brand-secondary: #2C8C9E;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html[lang='ar'] body {
+    font-family: 'IBM Plex Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;
+    font-size: 1.0625rem; /* +1px for Arabic glyphs */
+    line-height: 1.7;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    line-height: 1.65;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-reading {
+    @apply mx-auto w-full max-w-reading px-4 sm:px-6;
+  }
+}

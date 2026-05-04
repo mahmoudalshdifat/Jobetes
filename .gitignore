@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Coverage and test reports
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log
+
+# Environment / secrets — NEVER commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Netlify / Fly
+.netlify/
+.fly/
+
+# Temporary
+tmp/
+.cache/
+
+# Python (operator-bot uses Python deps for CLI-Anything)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local-only memory output (project-local run logs are tracked,
+# but throwaway scratch is ignored)
+memory/scratch/
