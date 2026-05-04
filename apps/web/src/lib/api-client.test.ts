@@ -17,9 +17,9 @@ afterEach(() => {
 });
 
 describe('JobetesApiClient', () => {
-  it('GETs /health with default base URL', async () => {
+  it('GETs /health with default edge transport (no /api prefix)', async () => {
     mockFetch(async (url) => {
-      expect(url).toBe('/api/health');
+      expect(url).toBe('/health');
       return new Response(
         JSON.stringify({ status: 'ok', service: 'x', timestamp: 't' }),
         { status: 200, headers: { 'content-type': 'application/json' } },
@@ -28,6 +28,33 @@ describe('JobetesApiClient', () => {
     const client = new JobetesApiClient();
     const r = await client.health();
     expect(r.status).toBe('ok');
+  });
+
+  it('uses /api prefix when transport=fastify', async () => {
+    mockFetch(async (url) => {
+      expect(url).toBe('/api/health');
+      return new Response(
+        JSON.stringify({ status: 'ok', service: 'x', timestamp: 't' }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    const client = new JobetesApiClient({ transport: 'fastify' });
+    await client.health();
+  });
+
+  it('rewrites doctor profile path per transport', async () => {
+    let lastUrl = '';
+    mockFetch(async (url) => {
+      lastUrl = String(url);
+      return new Response('{}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    await new JobetesApiClient({ transport: 'edge' }).doctorProfile();
+    expect(lastUrl).toBe('/doctor-profile');
+    await new JobetesApiClient({ transport: 'fastify' }).doctorProfile();
+    expect(lastUrl).toBe('/api/doctor/profile');
   });
 
   it('honors custom baseUrl with trailing-slash strip', async () => {

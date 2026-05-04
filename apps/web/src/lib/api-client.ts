@@ -6,12 +6,22 @@ import type {
 } from '@jobetes/shared-schemas';
 
 /**
- * Tiny, type-safe wrapper over the Jobetes API. No external HTTP dependency
- * (uses native fetch) so the bundle stays small. Bearer token is optional —
- * provide it for `/me/*` routes after Supabase sign-in.
+ * Tiny, type-safe wrapper over the Jobetes API.
+ *
+ * Two deployment targets, identical contract:
+ *  - **Fastify** (apps/api/, e.g. Fly.io) — paths like `/doctor/profile`, `/ai/triage`
+ *  - **Supabase Edge Functions** — flat names: `/doctor-profile`, `/triage`
+ *
+ * `transport` selects the path style. Defaults to `'edge'` because that is
+ * the production deploy. For local dev with a running Fastify server set
+ * `transport: 'fastify'`. The dev proxy (`vite.config.ts`) already maps
+ * `/api/*` to localhost:3000 if you keep the Fastify mode.
  */
+export type Transport = 'edge' | 'fastify';
+
 export type ApiClientOptions = {
   baseUrl?: string;
+  transport?: Transport;
   getToken?: () => string | null | Promise<string | null>;
 };
 
@@ -26,28 +36,67 @@ export class ApiError extends Error {
   }
 }
 
+const PATHS: Record<Transport, Record<string, string>> = {
+  edge: {
+    health: '/health',
+    doctorProfile: '/doctor-profile',
+    intake: '/intake',
+    triage: '/triage',
+    me: '/me',
+    myIntakes: '/me-intakes',
+    claim: '/me-claim',
+  },
+  fastify: {
+    health: '/health',
+    doctorProfile: '/doctor/profile',
+    intake: '/intake',
+    triage: '/ai/triage',
+    me: '/me',
+    myIntakes: '/me/intakes',
+    claim: '/me/claim',
+  },
+};
+
 export class JobetesApiClient {
   private readonly baseUrl: string;
+  private readonly transport: Transport;
   private readonly getToken?: () => string | null | Promise<string | null>;
 
   constructor(opts: ApiClientOptions = {}) {
-    this.baseUrl = (opts.baseUrl ?? '/api').replace(/\/+$/, '');
+    this.transport = opts.transport ?? 'edge';
+    this.baseUrl = (opts.baseUrl ?? this.defaultBaseUrl()).replace(/\/+$/, '');
     this.getToken = opts.getToken;
+  }
+
+  private defaultBaseUrl(): string {
+    const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+    if (env?.VITE_API_URL) return env.VITE_API_URL;
+    return this.transport === 'edge' ? '' : '/api';
   }
 
   private async headers(): Promise<HeadersInit> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const token = await this.getToken?.();
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Supabase edge functions also require the apikey header for verify_jwt=true
+    // routes; harmless on verify_jwt=false routes.
+    const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+    if (env?.VITE_SUPABASE_ANON_KEY && this.transport === 'edge') {
+      headers.apikey = env.VITE_SUPABASE_ANON_KEY;
+      if (!headers.Authorization) headers.Authorization = `Bearer ${env.VITE_SUPABASE_ANON_KEY}`;
+    }
     return headers;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async request<T>(method: string, key: string, body?: unknown): Promise<T> {
+    const path = PATHS[this.transport][key];
+    if (!path) throw new Error(`unknown path key: ${key}`);
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: await this.headers(),
       body: body == null ? undefined : JSON.stringify(body),
-      credentials: 'include',
+      // edge functions don't need cookies; credentials hurts CORS.
+      credentials: this.transport === 'edge' ? 'omit' : 'include',
     });
     if (!res.ok) {
       let errorBody: unknown;
@@ -62,23 +111,23 @@ export class JobetesApiClient {
   }
 
   health(): Promise<{ status: 'ok'; service: string; timestamp: string }> {
-    return this.request('GET', '/health');
+    return this.request('GET', 'health');
   }
 
   doctorProfile(): Promise<DoctorProfile> {
-    return this.request('GET', '/doctor/profile');
+    return this.request('GET', 'doctorProfile');
   }
 
   submitIntake(intake: PatientIntake): Promise<{ id: string; receivedAt: string }> {
-    return this.request('POST', '/intake', intake);
+    return this.request('POST', 'intake', intake);
   }
 
   triage(input: TriageInput): Promise<TriageResult> {
-    return this.request('POST', '/ai/triage', input);
+    return this.request('POST', 'triage', input);
   }
 
   me(): Promise<{ user: { supabaseUserId: string; email?: string } }> {
-    return this.request('GET', '/me');
+    return this.request('GET', 'me');
   }
 
   myIntakes(): Promise<{
@@ -86,10 +135,10 @@ export class JobetesApiClient {
     intakes: { id: string; receivedAt: string }[];
     persistence: 'memory' | 'prisma';
   }> {
-    return this.request('GET', '/me/intakes');
+    return this.request('GET', 'myIntakes');
   }
 
   claimByPhone(phone: string): Promise<{ patientId: string }> {
-    return this.request('POST', '/me/claim', { phone });
+    return this.request('POST', 'claim', { phone });
   }
 }
