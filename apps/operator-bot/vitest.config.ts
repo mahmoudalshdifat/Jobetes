@@ -7,8 +7,8 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['src/**/*.ts'],
       // main.ts is the bot wiring (Telegram lifecycle) — exercised in E2E only.
-      exclude: ['src/**/*.test.ts', 'src/main.ts', 'src/codespace.ts', 'src/stt.ts'],
-      thresholds: { lines: 70, functions: 70, branches: 60, statements: 70 },
+      exclude: ['src/**/*.test.ts', 'src/main.ts'],
+      thresholds: { lines: 80, functions: 80, branches: 75, statements: 80 },
     },
   },
 });
