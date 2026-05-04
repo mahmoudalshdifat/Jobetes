@@ -14,13 +14,10 @@ export type AdminSummary = {
 };
 
 export async function fetchAdminSummary(token: string): Promise<AdminSummary> {
-  const res = await fetch(`${BASE}/admin-summary`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    },
-  });
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (anon) headers.apikey = anon;
+  const res = await fetch(`${BASE}/admin-summary`, { method: 'GET', headers });
   if (!res.ok) throw new Error(`admin-summary HTTP ${res.status}`);
   return (await res.json()) as AdminSummary;
 }
