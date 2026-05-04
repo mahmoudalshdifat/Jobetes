@@ -1,13 +1,18 @@
 name: deploy-pages
 
-# FREE web hosting via GitHub Pages — alternative to Netlify, no account needed.
-# Activates as soon as Pages is enabled on the repo (Settings → Pages → Source: GitHub Actions).
+# FREE web hosting via GitHub Pages.
+# Publishes 3 apps to one Pages site:
+#   /             → patient web (apps/web)
+#   /doctor/      → doctor portal (apps/doctor)
+#   /admin/       → admin console (apps/admin)
 
 on:
   push:
     branches: [main]
     paths:
       - 'apps/web/**'
+      - 'apps/doctor/**'
+      - 'apps/admin/**'
       - 'packages/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
@@ -21,6 +26,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  VITE_API_URL: https://kzzihkwkhnnoixgogxzj.supabase.co/functions/v1
+  VITE_SUPABASE_URL: https://kzzihkwkhnnoixgogxzj.supabase.co
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,21 +42,40 @@ jobs:
         with:
           version: 10.32.1
       - run: pnpm install --frozen-lockfile=false
-      - name: Build web with Pages base path
+
+      - name: Build patient web (root)
         run: pnpm --filter @jobetes/web build
         env:
-          # Repo's GH-Pages URL is https://mahmoudalshdifat.github.io/Jobetes/
-          # Vite needs the base path set so asset URLs are correct.
           VITE_BASE: /Jobetes/
-          VITE_API_URL: https://kzzihkwkhnnoixgogxzj.supabase.co/functions/v1
-          VITE_SUPABASE_URL: https://kzzihkwkhnnoixgogxzj.supabase.co
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Make 404.html (SPA fallback for GH Pages)
-        run: cp apps/web/dist/index.html apps/web/dist/404.html
+
+      - name: Build doctor portal (subpath)
+        run: pnpm --filter @jobetes/doctor build
+        env:
+          VITE_BASE: /Jobetes/doctor/
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Build admin console (subpath)
+        run: pnpm --filter @jobetes/admin build
+        env:
+          VITE_BASE: /Jobetes/admin/
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Compose Pages output (web + /doctor + /admin)
+        run: |
+          rm -rf _site
+          mkdir -p _site/doctor _site/admin
+          cp -R apps/web/dist/.    _site/
+          cp -R apps/doctor/dist/. _site/doctor/
+          cp -R apps/admin/dist/.  _site/admin/
+          cp _site/index.html _site/404.html
+
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web/dist
+          path: _site
 
   deploy:
     needs: build
