@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import { loadConfig, type AppConfig } from './config.js';
 import { loggerOptions } from './logger.js';
+import { attachErrorHandler, initObservability } from './observability.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerDoctorRoutes } from './routes/doctor.js';
 import { registerIntakeRoutes } from './routes/intake.js';
@@ -12,7 +13,9 @@ import { registerTriageRoutes } from './routes/triage.js';
 
 export async function buildApp(overrideConfig?: Partial<AppConfig>): Promise<FastifyInstance> {
   const cfg = { ...loadConfig(), ...overrideConfig };
+  initObservability(cfg);
   const app = Fastify({ logger: loggerOptions(cfg) });
+  attachErrorHandler(app, cfg);
 
   await app.register(helmet, {
     contentSecurityPolicy: {

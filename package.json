@@ -19,12 +19,15 @@
     "lint:fix": "turbo run lint -- --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}\"",
-    "e2e": "turbo run e2e",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
     "a11y": "turbo run a11y",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",

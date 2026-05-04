@@ -11,7 +11,7 @@
     "lint": "pnpm exec eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "a11y": "vitest run --config vitest.a11y.config.ts"
+    "a11y": "vitest run a11y.test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -19,6 +19,7 @@
     "@jobetes/i18n": "workspace:*",
     "@jobetes/shared-schemas": "workspace:*",
     "@jobetes/ui": "workspace:*",
+    "@sentry/react": "^8.47.0",
     "i18next": "^24.2.0",
     "i18next-browser-languagedetector": "^8.0.2",
     "react": "^18.3.1",
