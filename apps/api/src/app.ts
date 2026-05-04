@@ -69,10 +69,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     max: 120,
     timeWindow: '1 minute',
     skipOnError: false,
-    keyGenerator: (req) => {
+    keyGenerator: (req): string => {
       const fwd = req.headers['x-forwarded-for'];
-      const ip = Array.isArray(fwd) ? fwd[0] : (fwd?.split(',')[0]?.trim() ?? req.ip);
-      return ip;
+      const first =
+        typeof fwd === 'string' ? fwd.split(',')[0]?.trim() : Array.isArray(fwd) ? fwd[0] : '';
+      return first ?? req.ip;
     },
   });
   await app.register(sensible);
