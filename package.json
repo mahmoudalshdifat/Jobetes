@@ -23,7 +23,8 @@
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps chromium",
     "a11y": "turbo run a11y",
-    "doctor": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "quant": "turbo run typecheck lint test build",
+    "doctor": "pnpm quant",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

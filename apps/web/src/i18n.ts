@@ -1,15 +1,35 @@
 import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, isRtl, resources } from '@jobetes/i18n';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, detectInitialLocale, isRtl, resources } from '@jobetes/i18n';
 import type { Locale } from '@jobetes/shared-schemas';
+
+/**
+ * Pre-compute the default the LanguageDetector will use when no localStorage
+ * entry is set. We bias towards Arabic for Jordan/Levant/MENA timezones —
+ * Jordanian phones often ship with English UI but speakers prefer Arabic
+ * content.
+ */
+function preferredInitialLocale(): Locale {
+  if (typeof window === 'undefined') return DEFAULT_LOCALE;
+  let timezone: string | undefined;
+  try {
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    timezone = undefined;
+  }
+  return detectInitialLocale({
+    timezone,
+    navigatorLanguage: window.navigator?.language,
+  });
+}
 
 await i18next
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: DEFAULT_LOCALE,
+    fallbackLng: preferredInitialLocale(),
     supportedLngs: [...SUPPORTED_LOCALES],
     defaultNS: 'common',
     interpolation: { escapeValue: false },

@@ -20,6 +20,27 @@ export function detectLocale(input: string | undefined | null): Locale {
   return DEFAULT_LOCALE;
 }
 
+/**
+ * Heuristic that errs on the side of Arabic for Levant/Gulf/MENA visitors
+ * even when their browser language is English (very common in Jordan —
+ * many phones ship with English UI but speakers prefer Arabic content).
+ * Uses the IANA timezone, locally cached by the OS — no GeoIP, no PII.
+ */
+const ARABIC_TIMEZONES = new Set([
+  'Asia/Amman', 'Asia/Damascus', 'Asia/Beirut', 'Asia/Hebron', 'Asia/Jerusalem',
+  'Asia/Gaza', 'Asia/Baghdad', 'Asia/Riyadh', 'Asia/Kuwait', 'Asia/Qatar',
+  'Asia/Bahrain', 'Asia/Dubai', 'Asia/Muscat',
+  'Africa/Cairo', 'Africa/Tunis', 'Africa/Algiers', 'Africa/Casablanca',
+]);
+
+export function detectInitialLocale(opts: {
+  timezone?: string;
+  navigatorLanguage?: string;
+}): Locale {
+  if (opts.timezone && ARABIC_TIMEZONES.has(opts.timezone)) return 'ar';
+  return detectLocale(opts.navigatorLanguage);
+}
+
 export const resources = {
   ar: { common: ar },
   de: { common: de },

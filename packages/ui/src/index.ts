@@ -7,3 +7,8 @@ export { DoctorBadge } from './DoctorBadge.js';
 export { LangToggle } from './LangToggle.js';
 export { EmergencyBanner } from './EmergencyBanner.js';
 export { Stepper } from './Stepper.js';
+export { WhatsAppButton, type WhatsAppButtonProps } from './WhatsAppButton.js';
+export { JordanCallout, type JordanCalloutProps } from './JordanCallout.js';
+export { Testimonials, type Testimonial, type TestimonialsProps } from './Testimonials.js';
+export { Faq, type FaqItem, type FaqProps } from './Faq.js';
+export { WhyGerman, type WhyGermanProps } from './WhyGerman.js';

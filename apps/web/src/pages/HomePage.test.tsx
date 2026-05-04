@@ -37,14 +37,35 @@ describe('HomePage', () => {
     expect(onStartIntake).toHaveBeenCalledOnce();
   });
 
-  it('links to the verifiable hospital page', () => {
+  it('renders WhatsApp click-to-chat (96 % JO adoption per DataReportal 2025)', () => {
     render(
       <I18nextProvider i18n={i18n}>
         <HomePage onStartIntake={() => {}} />
       </I18nextProvider>,
     );
-    const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', expect.stringContaining('annahospital.de'));
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    const wa = screen
+      .getAllByRole('link')
+      .find((l) => l.getAttribute('href')?.includes('wa.me'));
+    expect(wa).toBeDefined();
+    expect(wa).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(wa).toHaveAttribute('target', '_blank');
+  });
+
+  it('renders the Jordan emergency number (911 / 199)', () => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <HomePage onStartIntake={() => {}} />
+      </I18nextProvider>,
+    );
+    expect(screen.getByText(/911|199/u)).toBeInTheDocument();
+  });
+
+  it('renders 3 FAQ <details> items', () => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <HomePage onStartIntake={() => {}} />
+      </I18nextProvider>,
+    );
+    expect(screen.getAllByRole('group').length).toBeGreaterThanOrEqual(3);
   });
 });

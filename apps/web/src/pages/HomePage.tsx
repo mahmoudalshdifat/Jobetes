@@ -1,10 +1,20 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Card, TrustBar } from '@jobetes/ui';
+import {
+  Button,
+  Card,
+  Faq,
+  TrustBar,
+  Testimonials,
+  WhatsAppButton,
+  WhyGerman,
+} from '@jobetes/ui';
+
+const WHATSAPP_NUMBER = '+4923231234567'; // placeholder — replace with clinic WA on launch
 
 /**
- * Hero + trust-signals + how-it-works + closing CTA. The "doctor card" on
- * the right is concrete proof — verifiable credentials and the hospital
- * link, not stock photography.
+ * Patient marketing landing for Jordan. Hero → why-German → how-it-works
+ * → testimonials → FAQ → family-access → closing CTA. WhatsApp button is
+ * a primary conversion path (96 % JO adoption per DataReportal 2025).
  */
 export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.Element {
   const { t } = useTranslation();
@@ -27,18 +37,21 @@ export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.
               <Button size="lg" onClick={onStartIntake}>
                 {t('hero.cta.start')}
               </Button>
-              <a
-                href="https://www.annahospital.de/klinik-fuer-gastroenterologie/team.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-14 items-center rounded-2xl px-7 text-lg font-medium text-ink-strong underline-offset-4 hover:underline"
-              >
-                {t('hero.cta.learn')} ↗
-              </a>
+              <WhatsAppButton
+                phone={WHATSAPP_NUMBER}
+                message={t('jordan.welcome.body')}
+                label={t('whatsapp.cta')}
+                sublabel={t('whatsapp.cta.sub')}
+              />
+            </div>
+
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent-olive/15 px-3 py-1 text-sm font-medium text-accent-olive">
+              <span aria-hidden>✓</span>
+              {t('free.first.consult.badge')}
             </div>
 
             <TrustBar
-              className="mt-12 justify-start"
+              className="mt-10 justify-start"
               items={[
                 { label: t('trust.privacyByDesign'), icon: '🛡' },
                 { label: t('trust.realDoctor'), icon: '✓' },
@@ -82,7 +95,17 @@ export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.
         </div>
       </section>
 
-      <section className="border-y border-ink-strong/5 bg-surface-white">
+      <WhyGerman
+        title={t('why.german.title')}
+        body={t('why.german.body')}
+        bullets={[
+          'Facharzt-Ausbildung 6+ Jahre · BÄK-zertifiziert',
+          'Patient*innen-Daten in der EU (Frankfurt) · DSGVO + PDPL 2023',
+          'Über 20 Jahre Klinik-Erfahrung im St. Anna Hospital',
+        ]}
+      />
+
+      <section className="border-y border-ink-strong/5 bg-surface-warm">
         <div className="container-reading py-14">
           <h2 className="text-2xl font-semibold tracking-tight text-ink-strong">
             {t('home.how.title', { defaultValue: 'So einfach' })}
@@ -94,29 +117,26 @@ export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.
                   step: '1',
                   title: t('home.how.step1.title', { defaultValue: 'Anmelden' }),
                   body: t('home.how.step1.body', {
-                    defaultValue:
-                      'In wenigen Minuten teilen Sie Ihre Symptome — auf Arabisch, Deutsch oder Englisch.',
+                    defaultValue: 'In wenigen Minuten teilen Sie Ihre Symptome.',
                   }),
                 },
                 {
                   step: '2',
                   title: t('home.how.step2.title', { defaultValue: 'Vorbereitung' }),
                   body: t('home.how.step2.body', {
-                    defaultValue:
-                      'Eine sichere KI-Vor-Triage strukturiert Ihr Anliegen für das Gespräch.',
+                    defaultValue: 'KI-Vor-Triage strukturiert Ihr Anliegen.',
                   }),
                 },
                 {
                   step: '3',
                   title: t('home.how.step3.title', { defaultValue: 'Konsultation' }),
                   body: t('home.how.step3.body', {
-                    defaultValue:
-                      'Der Arzt meldet sich persönlich — per Video, Telefon oder Chat in Ihrer Sprache.',
+                    defaultValue: 'Der Arzt meldet sich persönlich.',
                   }),
                 },
               ] as const
             ).map((s) => (
-              <li key={s.step} className="rounded-3xl bg-surface-warm p-6">
+              <li key={s.step} className="rounded-3xl bg-surface-white p-6 shadow-sm">
                 <span className="inline-flex size-9 items-center justify-center rounded-full bg-brand-primary text-base font-semibold text-white">
                   {s.step}
                 </span>
@@ -128,7 +148,33 @@ export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.
         </div>
       </section>
 
-      <section className="container-reading py-16">
+      <Testimonials
+        title={t('testimonials.title')}
+        items={[
+          { body: t('testimonials.t1.body'), author: t('testimonials.t1.author') },
+          { body: t('testimonials.t2.body'), author: t('testimonials.t2.author') },
+          { body: t('testimonials.t3.body'), author: t('testimonials.t3.author') },
+        ]}
+      />
+
+      <Faq
+        title={t('faq.title')}
+        items={[
+          { q: t('faq.q1'), a: t('faq.a1') },
+          { q: t('faq.q2'), a: t('faq.a2') },
+          { q: t('faq.q3'), a: t('faq.a3') },
+        ]}
+      />
+
+      <section className="container-reading pb-16">
+        <Card
+          title={t('family.access.title')}
+          description={t('family.access.body')}
+          className="border-brand-secondary/20 bg-brand-secondary/5"
+        />
+      </section>
+
+      <section className="container-reading pb-20">
         <div className="rounded-3xl bg-brand-primary px-8 py-12 text-surface-white sm:px-12">
           <h2 className="max-w-prose text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('home.cta.title', { defaultValue: 'Bereit, das Gespräch zu beginnen?' })}
@@ -139,11 +185,20 @@ export function HomePage({ onStartIntake }: { onStartIntake: () => void }): JSX.
                 'Vertraulich, in Ihrer Sprache, ohne Diagnose-Anspruch — nur klare nächste Schritte.',
             })}
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Button size="lg" variant="secondary" onClick={onStartIntake}>
               {t('hero.cta.start')}
             </Button>
+            <a
+              href="https://wa.me/4923231234567"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-14 items-center rounded-2xl border-2 border-surface-warm/40 px-6 text-base font-medium text-surface-warm hover:bg-surface-warm/10"
+            >
+              {t('home.schedule.cta')}
+            </a>
           </div>
+          <p className="mt-6 text-xs text-surface-warm/70">{t('emergency.jordan')}</p>
         </div>
       </section>
     </div>

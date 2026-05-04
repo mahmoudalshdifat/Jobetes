@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, detectLocale, isRtl, resources } from './index.js';
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  detectInitialLocale,
+  detectLocale,
+  isRtl,
+  resources,
+} from './index.js';
 
 describe('i18n', () => {
   it('marks Arabic as RTL and DE/EN as LTR', () => {
@@ -22,5 +29,19 @@ describe('i18n', () => {
       const keys = Object.keys(resources[loc].common).sort();
       expect(keys, `locale ${loc} missing keys`).toEqual(enKeys);
     }
+  });
+
+  it('detectInitialLocale prefers Arabic for Jordan/Levant/MENA timezones', () => {
+    expect(detectInitialLocale({ timezone: 'Asia/Amman', navigatorLanguage: 'en-US' })).toBe('ar');
+    expect(detectInitialLocale({ timezone: 'Asia/Beirut', navigatorLanguage: 'en' })).toBe('ar');
+    expect(detectInitialLocale({ timezone: 'Africa/Cairo', navigatorLanguage: 'fr' })).toBe('ar');
+  });
+
+  it('detectInitialLocale falls back to navigator.language outside Arab regions', () => {
+    expect(detectInitialLocale({ timezone: 'Europe/Berlin', navigatorLanguage: 'de-DE' })).toBe('de');
+    expect(detectInitialLocale({ timezone: 'America/New_York', navigatorLanguage: 'en-US' })).toBe('en');
+    expect(detectInitialLocale({ timezone: 'Europe/Berlin', navigatorLanguage: 'fr-FR' })).toBe(
+      DEFAULT_LOCALE,
+    );
   });
 });

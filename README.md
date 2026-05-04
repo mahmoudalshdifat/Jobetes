@@ -55,7 +55,8 @@ cp .env.example .env
 pnpm dev
 
 # 4. Single-command quality gate
-pnpm doctor    # typecheck + lint + test + build
+pnpm quant     # turbo-based typecheck + lint + test + build
+pnpm doctor    # compatibility alias for pnpm quant
 pnpm coverage  # per-package coverage with thresholds
 pnpm e2e       # Playwright (after pnpm e2e:install)
 ```

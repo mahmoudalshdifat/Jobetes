@@ -4,14 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1B4D7A" />
-    <meta name="description" content="Jobetes — specialist gastroenterology care for Jordanian patients with Dr. Mahmoud Al-Shdaifat (St. Anna Hospital Herne)." />
+
+    <title>Jobetes — د. محمود الشديفات · رعاية الجهاز الهضمي للمرضى في الأردن</title>
+    <meta
+      name="description"
+      content="استشارة عن بُعد مع طبيب اختصاصي ألماني — أمراض الجهاز الهضمي والسكري والطوارئ. بالعربية والألمانية والإنجليزية. الاستشارة الأولى مجانية. Cross-border telemedicine for Jordanian patients."
+    />
+    <meta name="keywords" content="جوبيتس, طبيب الأردن, طب باطني, جهاز هضمي, تنظير, سكري, ألمانيا, telemedicine Jordan, gastroenterologist, Dr. Al-Shdaifat" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://mahmoudalshdifat.github.io/Jobetes/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jobetes — رعاية الجهاز الهضمي للمرضى في الأردن" />
+    <meta property="og:description" content="استشارة آمنة مع طبيب اختصاصي ألماني، بالعربية. الأولى مجانية." />
+    <meta property="og:locale" content="ar_JO" />
+    <meta property="og:locale:alternate" content="de_DE" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://mahmoudalshdifat.github.io/Jobetes/" />
+    <meta property="og:site_name" content="Jobetes" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jobetes · رعاية الجهاز الهضمي للمرضى في الأردن" />
+    <meta name="twitter:description" content="استشارة آمنة مع طبيب اختصاصي ألماني، بالعربية. الأولى مجانية." />
+
+    <!-- hreflang for AR/DE/EN -->
+    <link rel="alternate" hreflang="ar" href="https://mahmoudalshdifat.github.io/Jobetes/?lng=ar" />
+    <link rel="alternate" hreflang="de" href="https://mahmoudalshdifat.github.io/Jobetes/?lng=de" />
+    <link rel="alternate" hreflang="en" href="https://mahmoudalshdifat.github.io/Jobetes/?lng=en" />
+    <link rel="alternate" hreflang="x-default" href="https://mahmoudalshdifat.github.io/Jobetes/" />
+
+    <!-- Schema.org Physician markup helps Arabic search engines surface real credentials -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Physician",
+        "name": "Dr. med. Mahmoud Al-Shdaifat",
+        "medicalSpecialty": ["Gastroenterology", "Internal Medicine", "Diabetology"],
+        "knowsLanguage": ["ar", "de", "en"],
+        "worksFor": {
+          "@type": "Hospital",
+          "name": "St. Anna Hospital Herne",
+          "url": "https://www.annahospital.de/klinik-fuer-gastroenterologie/team.html"
+        },
+        "availableService": {
+          "@type": "MedicalService",
+          "name": "Cross-border telemedicine consultation",
+          "audience": { "@type": "MedicalAudience", "audienceType": "Patient", "geographicArea": "Jordan" }
+        }
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <title>Jobetes</title>
   </head>
   <body class="bg-surface-warm text-ink-strong antialiased">
     <div id="root"></div>
