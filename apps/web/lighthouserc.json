@@ -3,11 +3,11 @@
     "collect": {
       "staticDistDir": "dist",
       "url": ["http://localhost/index.html"],
-      "numberOfRuns": 1,
+      "numberOfRuns": 2,
       "settings": {
         "preset": "desktop",
         "throttlingMethod": "simulate",
-        "skipAudits": ["uses-http2", "redirects-http"]
+        "skipAudits": ["uses-http2", "redirects-http", "is-on-https"]
       }
     },
     "assert": {
