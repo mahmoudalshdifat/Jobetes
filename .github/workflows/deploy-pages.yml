@@ -1,0 +1,60 @@
+name: deploy-pages
+
+# FREE web hosting via GitHub Pages — alternative to Netlify, no account needed.
+# Activates as soon as Pages is enabled on the repo (Settings → Pages → Source: GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - run: pnpm install --frozen-lockfile=false
+      - name: Build web with Pages base path
+        run: pnpm --filter @jobetes/web build
+        env:
+          # Repo's GH-Pages URL is https://mahmoudalshdifat.github.io/Jobetes/
+          # Vite needs the base path set so asset URLs are correct.
+          VITE_BASE: /Jobetes/
+          VITE_API_URL: https://kzzihkwkhnnoixgogxzj.supabase.co/functions/v1
+          VITE_SUPABASE_URL: https://kzzihkwkhnnoixgogxzj.supabase.co
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Make 404.html (SPA fallback for GH Pages)
+        run: cp apps/web/dist/index.html apps/web/dist/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

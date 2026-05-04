@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 export default defineConfig({
+  // VITE_BASE lets GitHub Pages deploy under /Jobetes/ without breaking dev.
+  // Netlify deploy leaves it unset → falls back to '/'.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [react()],
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
