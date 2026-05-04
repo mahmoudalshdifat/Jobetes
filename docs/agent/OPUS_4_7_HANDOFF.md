@@ -68,6 +68,13 @@ Operationalized:
 - **Zod schemas shared FE/BE** in `@jobetes/shared-schemas` — single source of truth, type-safe across boundaries.
 - **PII redaction at logger ingest** (Pino redact paths) — logs are safe to ship to ops.
 - **Allowlist-only Telegram bot** — non-allowlisted user IDs receive *no reply at all*, not a "permission denied" message.
+- **Repo abstraction with two adapters** (in-memory + Prisma) keyed on `DATABASE_URL`. Phase 0 ships without a DB; Phase 1 flips on by setting one env var. Single API surface; no branching at call sites.
+- **Mock Prisma client in tests** — preserves orchestration coverage (transaction order, audit-log writes, idempotency, cross-user takeover refusal) without needing a live DB in CI.
+- **Magic-link OTP for patient auth** (Supabase) — no passwords to forget, friendly for older Jordanian patients on shared family devices.
+- **Native-fetch typed API client** in `apps/web/src/lib/api-client.ts` — no axios bloat, types come from shared-schemas, `ApiError` carries status+body.
+- **`if: ${{ vars.X != '' }}` GitHub-Actions pattern** for deploy gating: the workflow exists in main but skips silently until configured. Means the PR for "set up Netlify" doesn't have to also add the workflow.
+- **Bundle-size budget script** as a CI gate. 130 KB initial gzip ceiling; we sit at 104.74. Every dep added shows up in the diff.
+- **Sanitize-then-pass-through** for `X-Request-Id`: keeps the contract while neutering log-injection.
 
 ## 6. What to Never Do Again
 
@@ -86,6 +93,10 @@ Operationalized:
 - **Reference `typeof <const>` inside a callback parameter of that const's own initializer.** TypeScript flags TS2502 ("referenced directly or indirectly in its own type annotation"). Hoist the type into a named interface first, then use it in both the const and the callback.
 - **Type a logger parameter as `Logger` from `pino`** when the call site might pass `app.log` (`FastifyBaseLogger`). They are not interchangeable. Use a structural `LogLike = { info: (obj: object, msg?: string) => void }` so the function accepts both.
 - **Forget `prisma generate` in postinstall.** The generated client is what TypeScript imports — without it, every consumer of `@prisma/client` breaks at build. Append `|| true` so the install does not fail in contexts where the schema is absent.
+- **Reach for Pino-Logger types in cross-context functions.** `app.log` (FastifyBaseLogger) and a freshly-created `pino()` instance are typed differently. Define a structural `LogLike = { info: (obj: object, msg?: string) => void }` and accept that.
+- **Return `string | undefined` from a Fastify v5 `keyGenerator`.** The plugin requires `string`. Annotate the function explicitly: `keyGenerator: (req): string => …` and provide a fallback (`req.ip`) when X-Forwarded-For is missing.
+- **Trust GitHub Actions `if: secrets.X != ''`** — secrets aren't legible in `if` conditions outside `env:` blocks. Use *variables* (`vars.X`) for "is this configured" checks, secrets for the actual value.
+- **Skip module-augmenting `FastifyRequest`** when adding custom request-scoped fields (`request.user`, `request.requestId`). Without `declare module 'fastify'`, the assignment is a type error and TS doesn't suggest the fix.
 
 ## 7. Shocking / Surprising
 
