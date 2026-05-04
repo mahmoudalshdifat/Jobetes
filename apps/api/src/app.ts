@@ -42,18 +42,39 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         connectSrc: ["'self'", 'https://generativelanguage.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
         frameAncestors: ["'none'"],
         upgradeInsecureRequests: [],
       },
     },
+    strictTransportSecurity: {
+      maxAge: 63_072_000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     crossOriginOpenerPolicy: { policy: 'same-origin' },
     crossOriginResourcePolicy: { policy: 'same-origin' },
+    crossOriginEmbedderPolicy: { policy: 'require-corp' },
   });
   await app.register(cors, {
     origin: cfg.CORS_ORIGIN.split(',').map((o) => o.trim()),
     credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    maxAge: 600,
   });
-  await app.register(rateLimit, { max: 60, timeWindow: '1 minute' });
+  // Tiered rate limits — stricter on write endpoints to deter spam/abuse.
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: '1 minute',
+    skipOnError: false,
+    keyGenerator: (req) => {
+      const fwd = req.headers['x-forwarded-for'];
+      const ip = Array.isArray(fwd) ? fwd[0] : (fwd?.split(',')[0]?.trim() ?? req.ip);
+      return ip;
+    },
+  });
   await app.register(sensible);
 
   await attachRequestId(app);
