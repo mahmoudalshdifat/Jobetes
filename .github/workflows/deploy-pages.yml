@@ -1,6 +1,6 @@
 name: deploy-pages
 
-# FREE web hosting via GitHub Pages.
+# FREE web hosting via GitHub Pages. Custom domain: jobetes.diggai.de
 # Publishes 3 apps to one Pages site:
 #   /             → patient web (apps/web)
 #   /doctor/      → doctor portal (apps/doctor)
