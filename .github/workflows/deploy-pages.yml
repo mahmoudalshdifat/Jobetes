@@ -69,6 +69,7 @@ jobs:
           cp -R apps/doctor/dist/. _site/doctor/
           cp -R apps/admin/dist/.  _site/admin/
           cp _site/index.html _site/404.html
+          echo "jobetes.diggai.de" > _site/CNAME
 
       - uses: actions/configure-pages@v5
         with:
