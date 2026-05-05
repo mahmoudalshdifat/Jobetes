@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmergencyBanner, LangToggle } from '@jobetes/ui';
 import type { Locale } from '@jobetes/shared-schemas';
@@ -12,10 +12,42 @@ import { LoginPage } from './pages/LoginPage.js';
 
 type Route = 'home' | 'doctor' | 'intake' | 'appointment' | 'legal' | 'login';
 
+const VALID_ROUTES: Route[] = ['home', 'doctor', 'intake', 'appointment', 'legal', 'login'];
+
+function parseHash(): Route {
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  return (VALID_ROUTES.includes(hash as Route) ? hash : 'home') as Route;
+}
+
+function useHashRoute(): [Route, (r: Route) => void] {
+  const [route, setRouteState] = useState<Route>(parseHash);
+
+  useEffect(() => {
+    const onHashChange = () => setRouteState(parseHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const setRoute = useCallback((r: Route) => {
+    window.location.hash = r === 'home' ? '' : r;
+    setRouteState(r);
+  }, []);
+
+  return [route, setRoute];
+}
+
 function AppShell(): JSX.Element {
   const { t, i18n } = useTranslation();
   const { status, signOut } = useAuth();
-  const [route, setRoute] = useState<Route>('home');
+  const [route, setRoute] = useHashRoute();
+
+  // Update document title on route change
+  useEffect(() => {
+    const titleKey = `page.title.${route}` as const;
+    const brandName = t('brand.name');
+    const pageTitle = t(titleKey, { defaultValue: brandName });
+    document.title = pageTitle === brandName ? brandName : `${pageTitle} — ${brandName}`;
+  }, [route, t]);
 
   return (
     <div className="min-h-screen bg-surface-warm">

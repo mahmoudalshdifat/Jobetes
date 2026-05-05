@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { HomePage } from './HomePage.js';
 import { i18n } from '../i18n.js';
@@ -14,15 +14,18 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
   });
 
-  it('renders the 3-step "How it works" section', () => {
+  it('renders the 3-step "How it works" section (lazy)', async () => {
     render(
       <I18nextProvider i18n={i18n}>
         <HomePage onStartIntake={() => {}} />
       </I18nextProvider>,
     );
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    // how-it-works is in the lazy below-fold chunk
+    await waitFor(() => {
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('2')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+    });
   });
 
   it('fires onStartIntake from the primary CTA', () => {
@@ -32,8 +35,8 @@ describe('HomePage', () => {
         <HomePage onStartIntake={onStartIntake} />
       </I18nextProvider>,
     );
-    const startButtons = screen.getAllByRole('button');
-    startButtons[0]?.click();
+    const startButton = screen.getAllByRole('button', { name: /start a confidential intake/i })[0];
+    if (startButton) fireEvent.click(startButton);
     expect(onStartIntake).toHaveBeenCalledOnce();
   });
 
@@ -51,21 +54,25 @@ describe('HomePage', () => {
     expect(wa).toHaveAttribute('target', '_blank');
   });
 
-  it('renders the Jordan emergency number (911 / 199)', () => {
+  it('renders the Jordan emergency number (911 / 199) (lazy)', async () => {
     render(
       <I18nextProvider i18n={i18n}>
         <HomePage onStartIntake={() => {}} />
       </I18nextProvider>,
     );
-    expect(screen.getByText(/911|199/u)).toBeInTheDocument();
+    // emergency number is in the lazy below-fold CTA section
+    await screen.findByText(/911|199/u);
   });
 
-  it('renders 3 FAQ <details> items', () => {
+  it('renders 3 FAQ <details> items (lazy)', async () => {
     render(
       <I18nextProvider i18n={i18n}>
         <HomePage onStartIntake={() => {}} />
       </I18nextProvider>,
     );
-    expect(screen.getAllByRole('group').length).toBeGreaterThanOrEqual(3);
+    // FAQ is in the lazy below-fold chunk
+    await waitFor(() => {
+      expect(screen.getAllByRole('group').length).toBeGreaterThanOrEqual(3);
+    });
   });
 });

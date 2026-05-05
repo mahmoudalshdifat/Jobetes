@@ -5,12 +5,14 @@ import { LegalPage } from './LegalPage.js';
 import { i18n } from '../i18n.js';
 
 describe('LegalPage', () => {
-  it('renders 3 legal links', () => {
+  it('renders privacy, terms and imprint sections', () => {
     render(
       <I18nextProvider i18n={i18n}>
         <LegalPage />
       </I18nextProvider>,
     );
-    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.getByRole('heading', { name: /privacy/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /terms/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /imprint/i })).toBeInTheDocument();
   });
 });

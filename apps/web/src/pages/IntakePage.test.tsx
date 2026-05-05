@@ -29,10 +29,13 @@ describe('IntakePage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '→' }));
     expect(screen.getByRole('heading', { level: 2, name: /your consent/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    expect(screen.getByRole('heading', { level: 2, name: /review/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit intake/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '←' }));
-    expect(screen.getByRole('heading', { level: 2, name: /cultural context/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /your consent/i })).toBeInTheDocument();
   });
 
   it('submits valid intake and shows success card', async () => {
@@ -54,7 +57,7 @@ describe('IntakePage', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '4' } });
 
     const symptomsSelect = screen.getByRole('listbox');
-    const option = screen.getByRole('option', { name: 'abdominal_pain' });
+    const option = screen.getByRole('option', { name: /abdominal pain/i });
     (option as HTMLOptionElement).selected = true;
     fireEvent.change(symptomsSelect);
 
@@ -66,6 +69,7 @@ describe('IntakePage', () => {
     fireEvent.click(screen.getByLabelText(/processing of my health data/i));
     fireEvent.click(screen.getByLabelText(/data may be processed in germany/i));
 
+    fireEvent.click(screen.getByRole('button', { name: '→' }));
     fireEvent.click(screen.getByRole('button', { name: /submit intake/i }));
 
     await waitFor(() => {

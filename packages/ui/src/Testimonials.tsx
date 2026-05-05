@@ -1,11 +1,11 @@
 export type Testimonial = { body: string; author: string };
-export type TestimonialsProps = { title: string; items: Testimonial[] };
+export type TestimonialsProps = { title: string; items: Testimonial[]; disclaimer?: string };
 
 /**
  * Patient-quote section. Phase 0 ships placeholder personas — replace
  * with real, consented quotes before public launch.
  */
-export function Testimonials({ title, items }: TestimonialsProps): JSX.Element {
+export function Testimonials({ title, items, disclaimer }: TestimonialsProps): JSX.Element {
   return (
     <section className="container-reading py-14">
       <h2 className="text-2xl font-semibold tracking-tight text-ink-strong">{title}</h2>
@@ -25,6 +25,9 @@ export function Testimonials({ title, items }: TestimonialsProps): JSX.Element {
           </li>
         ))}
       </ul>
+      {disclaimer ? (
+        <p className="mt-4 text-center text-xs text-ink-soft/60 italic">{disclaimer}</p>
+      ) : null}
     </section>
   );
 }

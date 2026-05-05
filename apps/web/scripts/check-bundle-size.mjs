@@ -2,10 +2,14 @@
 /**
  * Performance budget enforcement.
  *
- * Reads `apps/web/dist/assets/*` and asserts that the gzipped initial bundle
- * (HTML + CSS + the chunks loaded by index.html) stays under a hard budget.
- * Fails CI if exceeded — keeping the patient-facing app snappy on Jordanian
- * 4G.
+ * Reads `apps/web/dist/index.html` to discover which asset files are
+ * referenced directly (initial load), then checks:
+ *   1. Total initial gzip ≤ BUDGET.initialGzipKB
+ *   2. Each individual chunk gzip ≤ BUDGET.individualChunkGzipKB
+ *
+ * Lazy-loaded chunks (dynamic imports not listed in index.html) are reported
+ * but excluded from the initial budget — keeping the patient-facing app
+ * snappy on Jordanian 4G.
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
@@ -22,8 +26,21 @@ async function gzipKB(path) {
   return gzipSync(buf).length / 1024;
 }
 
+/** Parse index.html and return asset filenames that are loaded on first paint */
+async function getInitialAssets(distPath) {
+  const html = await readFile(join(distPath, 'index.html'), 'utf8');
+  const initial = new Set();
+  // <script ... src="/assets/foo.js"> or src="assets/foo.js"
+  for (const m of html.matchAll(/\bsrc="[^"]*\/assets\/([^"]+\.js)"/g)) initial.add(m[1]);
+  // <link rel="modulepreload" href="..."> and rel="stylesheet"
+  for (const m of html.matchAll(/\bhref="[^"]*\/assets\/([^"]+\.(js|css))"/g)) initial.add(m[1]);
+  return initial;
+}
+
 async function main() {
-  const html = await gzipKB(join(DIST, 'index.html'));
+  const htmlGz = await gzipKB(join(DIST, 'index.html'));
+  const initialNames = await getInitialAssets(DIST);
+
   const assetsDir = join(DIST, 'assets');
   const entries = await readdir(assetsDir);
 
@@ -33,24 +50,29 @@ async function main() {
       .map(async (f) => {
         const p = join(assetsDir, f);
         const s = await stat(p);
-        return { f, raw: s.size / 1024, gz: await gzipKB(p) };
+        return { f, raw: s.size / 1024, gz: await gzipKB(p), initial: initialNames.has(f) };
       }),
   );
 
-  const initial = html + sizes.reduce((acc, s) => acc + s.gz, 0);
+  const initialChunks = sizes.filter((s) => s.initial);
+  const lazyChunks = sizes.filter((s) => !s.initial);
+  const initialTotal = htmlGz + initialChunks.reduce((acc, s) => acc + s.gz, 0);
 
-  console.log('asset                                   raw KB   gz KB');
-  console.log('----------------------------------------------------- ');
-  console.log(`index.html                              n/a      ${html.toFixed(2)}`);
-  for (const s of sizes) {
-    console.log(`${s.f.padEnd(40)}${s.raw.toFixed(2).padStart(8)} ${s.gz.toFixed(2).padStart(7)}`);
+  console.log('asset                                   raw KB   gz KB  kind');
+  console.log('-----------------------------------------------------------');
+  console.log(`index.html                              n/a      ${htmlGz.toFixed(2)}   initial`);
+  for (const s of [...initialChunks, ...lazyChunks]) {
+    const kind = s.initial ? 'initial' : 'lazy';
+    console.log(`${s.f.padEnd(40)}${s.raw.toFixed(2).padStart(8)} ${s.gz.toFixed(2).padStart(7)}  ${kind}`);
   }
   console.log(`-----`);
-  console.log(`initial gzip:    ${initial.toFixed(2)} KB  (budget ${BUDGET.initialGzipKB} KB)`);
+  console.log(`initial gzip:    ${initialTotal.toFixed(2)} KB  (budget ${BUDGET.initialGzipKB} KB)`);
+  if (lazyChunks.length)
+    console.log(`lazy chunks:     ${lazyChunks.reduce((a, s) => a + s.gz, 0).toFixed(2)} KB  (not counted)`);
 
   let failed = false;
-  if (initial > BUDGET.initialGzipKB) {
-    console.error(`✖ initial gzip exceeds budget by ${(initial - BUDGET.initialGzipKB).toFixed(2)} KB`);
+  if (initialTotal > BUDGET.initialGzipKB) {
+    console.error(`✖ initial gzip exceeds budget by ${(initialTotal - BUDGET.initialGzipKB).toFixed(2)} KB`);
     failed = true;
   }
   for (const s of sizes) {
