@@ -46,19 +46,19 @@ jobs:
       - name: Build patient web (root)
         run: pnpm --filter @jobetes/web build
         env:
-          VITE_BASE: /Jobetes/
+          VITE_BASE: /
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Build doctor portal (subpath)
         run: pnpm --filter @jobetes/doctor build
         env:
-          VITE_BASE: /Jobetes/doctor/
+          VITE_BASE: /doctor/
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Build admin console (subpath)
         run: pnpm --filter @jobetes/admin build
         env:
-          VITE_BASE: /Jobetes/admin/
+          VITE_BASE: /admin/
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Compose Pages output (web + /doctor + /admin)
@@ -68,7 +68,10 @@ jobs:
           cp -R apps/web/dist/.    _site/
           cp -R apps/doctor/dist/. _site/doctor/
           cp -R apps/admin/dist/.  _site/admin/
+          # 404.html for SPA routing at each level
           cp _site/index.html _site/404.html
+          cp _site/doctor/index.html _site/doctor/404.html
+          cp _site/admin/index.html  _site/admin/404.html
           echo "jobetes.diggai.de" > _site/CNAME
 
       - uses: actions/configure-pages@v5
