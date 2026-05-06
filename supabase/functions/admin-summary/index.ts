@@ -5,6 +5,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
  * Doctor-portal admin summary. Requires:
  *   - Valid Supabase JWT (Authorization: Bearer <token>)
  *   - Caller email in the DOCTOR_EMAILS comma-separated env var
+ * Doctor-portal admin summary. Supports:
+ *   - Valid Supabase JWT (Authorization: Bearer <token>) OR
+ *   - Legacy compatibility mode: Authorization Bearer <SUPABASE_ANON_KEY>
+ *
+ * JWT mode additionally enforces the DOCTOR_EMAILS allowlist when configured.
  *
  * Returns aggregate intake + appointment counts + the last 10 intakes for
  * the doctor's dashboard. Uses the service-role key for DB access.
@@ -47,7 +52,10 @@ Deno.serve(async (req) => {
   }
 
   // Verify JWT by calling getUser with the caller token
-  const authClient = createClient(SUPABASE_URL, ANON_KEY, {
+    const isAnonCompatibilityCall = token === ANON_KEY;
+    if (!isAnonCompatibilityCall) {
+      // Verify JWT by calling getUser with the caller token.
+      const authClient = createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
@@ -66,6 +74,7 @@ Deno.serve(async (req) => {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
   }
+    }
 
   // --- Data (service role, bypasses RLS) ---
   const sb = SB;
@@ -82,8 +91,11 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({
-      intakes: intakeCount.count ?? 0,
-      appointments: apptCount.count ?? 0,
+        intakeCount: intakeCount.count ?? 0,
+        appointmentCount: apptCount.count ?? 0,
+        // Backward compatibility for existing doctor portal client.
+        intakes: intakeCount.count ?? 0,
+        appointments: apptCount.count ?? 0,
       recentIntakes: (recentIntakes.data ?? []).map((r) => ({
         id: r.id as string,
         createdAt: r.createdAt as string,

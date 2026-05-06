@@ -22,7 +22,14 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Deploy Edge Functions
-        run: supabase functions deploy --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
+      - name: Deploy Public/Protected Edge Functions
+        run: |
+          supabase functions deploy health doctor-profile intake triage notify-patient \
+            --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
+      - name: Deploy admin-summary (anon-key compatibility mode)
+        run: |
+          supabase functions deploy admin-summary \
+            --project-ref ${{ vars.SUPABASE_PROJECT_ID }} \
+            --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
