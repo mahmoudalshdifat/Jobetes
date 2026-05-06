@@ -1,6 +1,6 @@
 # Hands-Off for Opus 4.7 — Jobetes Operating Manual
 
-> Last updated: 2026-05-04 (initial). Update this file whenever a new "what worked / never do / shocking" finding emerges.
+> Last updated: 2026-05-06. Update this file whenever a new "what worked / never do / shocking" finding emerges.
 
 ---
 
@@ -75,6 +75,8 @@ Operationalized:
 - **`if: ${{ vars.X != '' }}` GitHub-Actions pattern** for deploy gating: the workflow exists in main but skips silently until configured. Means the PR for "set up Netlify" doesn't have to also add the workflow.
 - **Bundle-size budget script** as a CI gate. 130 KB initial gzip ceiling; we sit at 104.74. Every dep added shows up in the diff.
 - **Sanitize-then-pass-through** for `X-Request-Id`: keeps the contract while neutering log-injection.
+- **GitHub Pages custom-domain base-path:** when a `CNAME` is active, Pages serves from `/` not `/<repo>/`. Set `VITE_BASE: /` (and `/doctor/`, `/admin/` for sub-apps). A passing green CI build does *not* catch a wrong `VITE_BASE` — the browser 404s at runtime silently.
+- **SPA 404.html per sub-directory:** GitHub Pages only has one custom 404 at root. Copy `index.html → 404.html` inside each SPA sub-directory (`_site/doctor/`, `_site/admin/`) so the client-router takes over on deep-link loads.
 
 ## 6. What to Never Do Again
 
@@ -96,6 +98,7 @@ Operationalized:
 - **Reach for Pino-Logger types in cross-context functions.** `app.log` (FastifyBaseLogger) and a freshly-created `pino()` instance are typed differently. Define a structural `LogLike = { info: (obj: object, msg?: string) => void }` and accept that.
 - **Return `string | undefined` from a Fastify v5 `keyGenerator`.** The plugin requires `string`. Annotate the function explicitly: `keyGenerator: (req): string => …` and provide a fallback (`req.ip`) when X-Forwarded-For is missing.
 - **Trust GitHub Actions `if: secrets.X != ''`** — secrets aren't legible in `if` conditions outside `env:` blocks. Use *variables* (`vars.X`) for "is this configured" checks, secrets for the actual value.
+- **Leave `VITE_BASE` as `/Jobetes/` after adding a CNAME** — the custom domain shifts the root from `/<repo>/` to `/`; all assets 404 in production while CI stays green.
 - **Skip module-augmenting `FastifyRequest`** when adding custom request-scoped fields (`request.user`, `request.requestId`). Without `declare module 'fastify'`, the assignment is a type error and TS doesn't suggest the fix.
 
 ## 7. Shocking / Surprising
