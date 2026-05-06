@@ -15,7 +15,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     # Skip silently if Supabase isn't configured yet.
-    if: ${{ vars.SUPABASE_PROJECT_ID != '' && secrets.SUPABASE_ACCESS_TOKEN != '' }}
+    if: ${{ vars.SUPABASE_PROJECT_ID != '' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
