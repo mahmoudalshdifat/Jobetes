@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js';
 import { Button, Card, EmergencyBanner } from '@jobetes/ui';
 
@@ -20,6 +20,11 @@ type View =
   | { kind: 'dashboard'; session: Session };
 
 type ServiceStatus = { name: string; ok: boolean; latencyMs: number };
+type AdminSummary = {
+  intakes: number;
+  appointments: number;
+  recentIntakes: { id: string; createdAt: string; severity: number; locale: string }[];
+} | null;
 
 const FUNCTIONS = ['health', 'doctor-profile', 'triage'] as const;
 
@@ -50,12 +55,19 @@ async function pingFunction(name: string): Promise<ServiceStatus> {
   }
 }
 
+/** Reset the module-level Supabase client cache — for Vitest only. */
+export function _resetForTests(): void {
+  cached = undefined;
+}
+
 export function App(): JSX.Element {
   const supabase = getSupabase();
   const [view, setView] = useState<View>(supabase ? { kind: 'loading' } : { kind: 'mock' });
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<ServiceStatus[]>([]);
+  const [adminSummary, setAdminSummary] = useState<AdminSummary>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -77,6 +89,31 @@ export function App(): JSX.Element {
     if (view.kind !== 'dashboard') return;
     void Promise.all(FUNCTIONS.map(pingFunction)).then(setStatuses);
   }, [view]);
+
+  const loadIntakes = useCallback(async () => {
+    if (!supabase || view.kind !== 'dashboard') return;
+    setSummaryLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const url = import.meta.env.VITE_SUPABASE_URL;
+      if (!url) return;
+
+      // admin-summary: total count
+      const summaryRes = await fetch(`${url}/functions/v1/admin-summary`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (summaryRes.ok) {
+        setAdminSummary((await summaryRes.json()) as AdminSummary);
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [supabase, view]);
+
+  useEffect(() => {
+    void loadIntakes();
+  }, [loadIntakes]);
 
   return (
     <div className="min-h-screen">
@@ -213,6 +250,54 @@ export function App(): JSX.Element {
                   </a>
                 </li>
               </ul>
+            </Card>
+
+            {/* Intake summary — doctor-facing queue */}
+            <Card
+              title="Patient intake queue"
+              description="Recent submissions (IDs + metadata only — no PHI displayed here)"
+            >
+              <div className="mt-2 flex items-center justify-between">
+                {adminSummary ? (
+                  <p className="text-sm text-ink-soft">
+                    Intakes: <span className="font-semibold text-ink-strong">{adminSummary.intakes}</span>
+                    <span className="mx-3 text-ink-strong/20">·</span>
+                    Appointments: <span className="font-semibold text-ink-strong">{adminSummary.appointments}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-ink-soft/60">
+                    {summaryLoading ? 'Loading…' : 'admin-summary function not yet deployed'}
+                  </p>
+                )}
+                <Button variant="ghost" onClick={() => void loadIntakes()} disabled={summaryLoading}>
+                  Refresh
+                </Button>
+              </div>
+
+              {(adminSummary?.recentIntakes ?? []).length > 0 ? (
+                <table className="mt-4 w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-ink-strong/10 text-ink-soft">
+                      <th className="pb-2 text-start font-medium">ID</th>
+                      <th className="pb-2 text-start font-medium">Received</th>
+                      <th className="pb-2 text-start font-medium">Severity</th>
+                      <th className="pb-2 text-start font-medium">Locale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(adminSummary?.recentIntakes ?? []).map((row) => (
+                      <tr key={row.id} className="border-b border-ink-strong/5">
+                        <td className="py-1.5 font-mono text-ink-soft">{row.id.slice(0, 8)}…</td>
+                        <td className="py-1.5">{new Date(row.createdAt).toLocaleString()}</td>
+                        <td className="py-1.5">{row.severity ?? '—'}</td>
+                        <td className="py-1.5 uppercase">{row.locale ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : !summaryLoading ? (
+                <p className="mt-3 text-xs text-ink-soft/60">No intakes yet, or admin-summary function not deployed.</p>
+              ) : null}
             </Card>
 
             <div>
