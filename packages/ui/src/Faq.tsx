@@ -9,12 +9,17 @@ export function Faq({ title, items }: FaqProps): JSX.Element {
         {items.map((it, i) => (
           <details
             key={i}
-            className="group p-5 [&[open]]:bg-surface-warm/40"
+            className="group p-5 transition-colors hover:bg-surface-warm/30 [&[open]]:bg-surface-warm/40"
           >
             <summary className="flex cursor-pointer items-center justify-between text-base font-medium text-ink-strong outline-none">
               <span>{it.q}</span>
-              <span aria-hidden className="ms-3 text-brand-secondary transition-transform group-open:rotate-45">
-                +
+              <span
+                aria-hidden
+                className="ms-3 inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-ink-strong/10 text-brand-secondary transition-transform duration-200 group-open:rotate-180"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 4l4 4 4-4" />
+                </svg>
               </span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">{it.a}</p>

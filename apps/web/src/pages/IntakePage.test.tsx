@@ -18,23 +18,23 @@ describe('IntakePage', () => {
     );
 
     expect(screen.getByRole('heading', { level: 2, name: /who you are/i })).toBeInTheDocument();
-    const backButton = screen.getByRole('button', { name: '←' });
+    const backButton = screen.getByRole('button', { name: /back/i });
     expect(backButton).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(screen.getByRole('heading', { level: 2, name: /what's going on/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(screen.getByRole('heading', { level: 2, name: /cultural context/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(screen.getByRole('heading', { level: 2, name: /your consent/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(screen.getByRole('heading', { level: 2, name: /review/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit intake/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '←' }));
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
     expect(screen.getByRole('heading', { level: 2, name: /your consent/i })).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe('IntakePage', () => {
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '1990-01-01' } });
     fireEvent.change(screen.getByPlaceholderText(/\+962/u), { target: { value: '+962790000000' } });
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     fireEvent.change(screen.getByRole('slider'), { target: { value: '4' } });
 
     const symptomsSelect = screen.getByRole('listbox');
@@ -61,15 +61,15 @@ describe('IntakePage', () => {
     (option as HTMLOptionElement).selected = true;
     fireEvent.change(symptomsSelect);
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     fireEvent.click(screen.getByLabelText(/terms of service/i));
     fireEvent.click(screen.getByLabelText(/privacy policy/i));
     fireEvent.click(screen.getByLabelText(/processing of my health data/i));
     fireEvent.click(screen.getByLabelText(/data may be processed in germany/i));
 
-    fireEvent.click(screen.getByRole('button', { name: '→' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     fireEvent.click(screen.getByRole('button', { name: /submit intake/i }));
 
     await waitFor(() => {

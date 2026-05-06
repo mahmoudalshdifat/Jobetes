@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import compress from '@fastify/compress';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -32,6 +33,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const intakeRepo = repoOverride ?? createIntakeRepo(cfg.DATABASE_URL, app.log);
   app.addHook('onClose', async () => {
     await intakeRepo.close();
+  });
+
+  // Structured performance logging — every request emits timing + status.
+  app.addHook('onResponse', async (request, reply) => {
+    request.log.info(
+      {
+        req: { method: request.method, url: request.url },
+        res: { statusCode: reply.statusCode },
+        responseTime: Math.round(reply.elapsedTime),
+      },
+      'request completed',
+    );
   });
 
   await app.register(helmet, {
@@ -79,15 +92,16 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     },
   });
   await app.register(sensible);
+  await app.register(compress, { global: true, encodings: ['br', 'gzip'] });
 
   await attachRequestId(app);
   await registerOpenApi(app, cfg);
   attachAuth(app, cfg);
 
-  await registerHealthRoutes(app);
+  await registerHealthRoutes(app, intakeRepo);
   await registerDoctorRoutes(app);
-  await registerIntakeRoutes(app, intakeRepo);
-  await registerAppointmentRoutes(app);
+  await registerIntakeRoutes(app, intakeRepo, cfg.NOTIFY_WEBHOOK_URL);
+  await registerAppointmentRoutes(app, cfg.NOTIFY_WEBHOOK_URL);
   await registerMeRoutes(app, intakeRepo);
   await registerAdminRoutes(app, intakeRepo);
   await registerTriageRoutes(app, cfg);

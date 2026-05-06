@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Button, Card, EmergencyBanner } from '@jobetes/ui';
+import { Button, Card, EmergencyBanner, cn, ToastProvider } from '@jobetes/ui';
 import { getSupabase } from './supabase.js';
 import { fetchAdminSummary, type AdminSummary } from './api.js';
 
 type View = 'loading' | 'login' | 'sent' | 'dashboard' | 'unauthorized' | 'mock';
 
-export function App(): JSX.Element {
+function DoctorApp(): JSX.Element {
   const supabase = getSupabase();
   const [view, setView] = useState<View>(supabase ? 'loading' : 'mock');
   const [session, setSession] = useState<Session | null>(null);
@@ -48,11 +48,18 @@ export function App(): JSX.Element {
   }, [view, session]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-surface-warm dark:bg-ink-strong">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:rounded-b-2xl focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
+
       <EmergencyBanner message="Doctor portal — internal use only · Patient data is special-category under GDPR Art. 9." />
 
-      <header className="border-b border-ink-strong/10 bg-surface-white">
-        <div className="container-reading flex items-center justify-between py-4">
+      <header className="sticky top-0 z-40 border-b border-ink-strong/10 bg-surface-white/80 backdrop-blur dark:border-surface-white/10 dark:bg-ink-strong/80">
+        <div className="container-reading flex items-center justify-between py-3">
           <span className="text-lg font-semibold tracking-tight text-brand-primary">
             Jobetes · Doctor Portal
           </span>
@@ -62,7 +69,7 @@ export function App(): JSX.Element {
         </div>
       </header>
 
-      <main className="container-reading py-12">
+      <main id="main-content" className="container-reading py-12">
         {view === 'loading' ? <p className="text-ink-soft">Lade…</p> : null}
 
         {view === 'mock' ? (
@@ -95,7 +102,7 @@ export function App(): JSX.Element {
                 <input
                   type="email"
                   required
-                  className="mt-1 h-12 w-full rounded-2xl border border-ink-strong/15 px-4"
+                  className="mt-1 h-12 w-full rounded-2xl border border-ink-strong/15 bg-surface-white px-4 transition-colors hover:border-ink-strong/25 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -139,12 +146,12 @@ export function App(): JSX.Element {
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <Card title="Intakes" description="Total received">
-                <p className="text-3xl font-semibold tabular-nums">
+                <p className="text-3xl font-semibold tabular-nums text-brand-primary">
                   {summary ? summary.intakes : '…'}
                 </p>
               </Card>
               <Card title="Appointments" description="Pending or confirmed">
-                <p className="text-3xl font-semibold tabular-nums">
+                <p className="text-3xl font-semibold tabular-nums text-brand-secondary">
                   {summary ? summary.appointments : '…'}
                 </p>
               </Card>
@@ -152,33 +159,51 @@ export function App(): JSX.Element {
 
             <Card title="Recent intakes" description="Last 10, newest first">
               {summary && summary.recentIntakes.length > 0 ? (
-                <ul className="space-y-2 text-sm">
-                  {summary.recentIntakes.map((r) => (
-                    <li
-                      key={r.id}
-                      className="flex items-center justify-between rounded-xl border border-ink-strong/10 p-3"
-                    >
-                      <span className="font-mono text-xs text-ink-soft">{r.id.slice(0, 8)}</span>
-                      <span>severity {r.severity}/10</span>
-                      <span className="text-ink-soft">{r.locale}</span>
-                      <time className="text-xs text-ink-soft">
-                        {new Date(r.createdAt).toLocaleString()}
-                      </time>
-                    </li>
-                  ))}
-                </ul>
+                <div className="overflow-hidden rounded-2xl border border-ink-strong/10">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-surface-warm/60 text-xs text-ink-soft">
+                        <th className="px-3 py-2 text-start font-medium">ID</th>
+                        <th className="px-3 py-2 text-start font-medium">Severity</th>
+                        <th className="px-3 py-2 text-start font-medium">Locale</th>
+                        <th className="px-3 py-2 text-start font-medium">Received</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {summary.recentIntakes.map((r) => (
+                        <tr key={r.id} className="border-b border-ink-strong/5 transition-colors hover:bg-surface-warm/30">
+                          <td className="px-3 py-2 font-mono text-xs text-ink-soft">{r.id.slice(0, 8)}…</td>
+                          <td className="px-3 py-2">
+                            <span className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                              (r.severity ?? 0) >= 8 ? 'bg-accent-copper/15 text-accent-copper' :
+                              (r.severity ?? 0) >= 5 ? 'bg-amber-100 text-amber-700' :
+                              'bg-accent-olive/15 text-accent-olive'
+                            )}>
+                              {r.severity}/10
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-ink-soft">{r.locale}</td>
+                          <td className="px-3 py-2 text-xs text-ink-soft">
+                            {new Date(r.createdAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className="text-ink-soft">{summary ? 'No intakes yet.' : 'Loading…'}</p>
               )}
             </Card>
 
             {error ? (
-              <p role="alert" className="text-accent-copper">
+              <p role="alert" className="rounded-2xl border border-accent-copper/20 bg-accent-copper/5 px-4 py-3 text-sm text-accent-copper">
                 {error}
               </p>
             ) : null}
 
-            <div>
+            <div className="flex justify-end">
               <Button
                 variant="ghost"
                 onClick={async () => {
@@ -192,9 +217,17 @@ export function App(): JSX.Element {
         ) : null}
       </main>
 
-      <footer className="border-t border-ink-strong/10 bg-surface-white py-6 text-center text-xs text-ink-soft">
+      <footer className="border-t border-ink-strong/10 bg-surface-white py-6 text-center text-xs text-ink-soft dark:border-surface-white/10 dark:bg-ink-strong dark:text-ink-soft">
         Jobetes · Internal · § 203 StGB · GDPR Art. 9
       </footer>
     </div>
+  );
+}
+
+export function App(): JSX.Element {
+  return (
+    <ToastProvider>
+      <DoctorApp />
+    </ToastProvider>
   );
 }

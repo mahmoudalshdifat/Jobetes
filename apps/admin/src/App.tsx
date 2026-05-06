@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js';
-import { Button, Card, EmergencyBanner } from '@jobetes/ui';
+import { Button, Card, EmergencyBanner, cn, ToastProvider } from '@jobetes/ui';
 
 /**
  * System admin console — separate from the doctor portal. Audience: the
@@ -60,7 +60,7 @@ export function _resetForTests(): void {
   cached = undefined;
 }
 
-export function App(): JSX.Element {
+function AdminApp(): JSX.Element {
   const supabase = getSupabase();
   const [view, setView] = useState<View>(supabase ? { kind: 'loading' } : { kind: 'mock' });
   const [email, setEmail] = useState('');
@@ -116,11 +116,18 @@ export function App(): JSX.Element {
   }, [loadIntakes]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-surface-warm dark:bg-ink-strong">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:rounded-b-2xl focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
+
       <EmergencyBanner message="Admin Console — internal use only · Sensitive system controls · § 203 StGB applies" />
 
-      <header className="border-b border-ink-strong/10 bg-surface-white">
-        <div className="container-reading flex items-center justify-between py-4">
+      <header className="sticky top-0 z-40 border-b border-ink-strong/10 bg-surface-white/80 backdrop-blur dark:border-surface-white/10 dark:bg-ink-strong/80">
+        <div className="container-reading flex items-center justify-between py-3">
           <span className="text-lg font-semibold tracking-tight text-brand-primary">
             Jobetes · Admin Console
           </span>
@@ -130,7 +137,7 @@ export function App(): JSX.Element {
         </div>
       </header>
 
-      <main className="container-reading py-12 space-y-6">
+      <main id="main-content" className="container-reading py-12 space-y-6">
         {view.kind === 'mock' ? (
           <Card title="Mock-Modus" description="Supabase env not configured.">
             <p className="text-ink-soft">
@@ -164,7 +171,7 @@ export function App(): JSX.Element {
                 <input
                   type="email"
                   required
-                  className="mt-1 h-12 w-full rounded-2xl border border-ink-strong/15 px-4"
+                  className="mt-1 h-12 w-full rounded-2xl border border-ink-strong/15 bg-surface-white px-4 transition-colors hover:border-ink-strong/25 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -190,24 +197,34 @@ export function App(): JSX.Element {
         {view.kind === 'dashboard' ? (
           <>
             <Card title="Service status" description="Live ping of each public edge function">
-              <ul className="mt-2 grid gap-2 sm:grid-cols-3">
+              <ul className="mt-2 grid gap-3 sm:grid-cols-3">
                 {statuses.length === 0
                   ? FUNCTIONS.map((n) => (
-                      <li key={n} className="rounded-xl border border-ink-strong/10 p-3 text-sm">
+                      <li key={n} className="flex items-center gap-2 rounded-xl border border-ink-strong/10 bg-surface-warm/40 p-3 text-sm">
+                        <span className="size-2 animate-pulse rounded-full bg-brand-secondary" />
                         {n} · pinging…
                       </li>
                     ))
                   : statuses.map((s) => (
                       <li
                         key={s.name}
-                        className="flex items-center justify-between rounded-xl border border-ink-strong/10 p-3 text-sm"
+                        className={
+                          'flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ' +
+                          (s.ok
+                            ? 'border-accent-olive/20 bg-accent-olive/5'
+                            : 'border-accent-copper/20 bg-accent-copper/5')
+                        }
                       >
                         <span className="font-medium">{s.name}</span>
                         <span
-                          className={s.ok ? 'text-accent-olive' : 'text-accent-copper'}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+                            s.ok ? 'bg-accent-olive/15 text-accent-olive' : 'bg-accent-copper/15 text-accent-copper',
+                          )}
                           aria-label={s.ok ? 'healthy' : 'unhealthy'}
                         >
-                          {s.ok ? '● ok' : '● down'} · {s.latencyMs}ms
+                          <span className={cn('size-1.5 rounded-full', s.ok ? 'bg-accent-olive' : 'bg-accent-copper')} />
+                          {s.ok ? 'ok' : 'down'} · {s.latencyMs}ms
                         </span>
                       </li>
                     ))}
@@ -253,54 +270,77 @@ export function App(): JSX.Element {
             </Card>
 
             {/* Intake summary — doctor-facing queue */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card
+                title="Intakes"
+                description="Total received"
+              >
+                <p className="text-3xl font-semibold tabular-nums text-brand-primary">
+                  {adminSummary ? adminSummary.intakes : summaryLoading ? '…' : '—'}
+                </p>
+              </Card>
+              <Card
+                title="Appointments"
+                description="Pending or confirmed"
+              >
+                <p className="text-3xl font-semibold tabular-nums text-brand-secondary">
+                  {adminSummary ? adminSummary.appointments : summaryLoading ? '…' : '—'}
+                </p>
+              </Card>
+            </div>
+
             <Card
               title="Patient intake queue"
               description="Recent submissions (IDs + metadata only — no PHI displayed here)"
+              footer={
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-ink-soft/60">
+                    {summaryLoading ? 'Loading…' : adminSummary ? `${adminSummary.recentIntakes.length} shown` : 'admin-summary function not yet deployed'}
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={() => void loadIntakes()} disabled={summaryLoading}>
+                    Refresh
+                  </Button>
+                </div>
+              }
             >
-              <div className="mt-2 flex items-center justify-between">
-                {adminSummary ? (
-                  <p className="text-sm text-ink-soft">
-                    Intakes: <span className="font-semibold text-ink-strong">{adminSummary.intakes}</span>
-                    <span className="mx-3 text-ink-strong/20">·</span>
-                    Appointments: <span className="font-semibold text-ink-strong">{adminSummary.appointments}</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-ink-soft/60">
-                    {summaryLoading ? 'Loading…' : 'admin-summary function not yet deployed'}
-                  </p>
-                )}
-                <Button variant="ghost" onClick={() => void loadIntakes()} disabled={summaryLoading}>
-                  Refresh
-                </Button>
-              </div>
-
               {(adminSummary?.recentIntakes ?? []).length > 0 ? (
-                <table className="mt-4 w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-ink-strong/10 text-ink-soft">
-                      <th className="pb-2 text-start font-medium">ID</th>
-                      <th className="pb-2 text-start font-medium">Received</th>
-                      <th className="pb-2 text-start font-medium">Severity</th>
-                      <th className="pb-2 text-start font-medium">Locale</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(adminSummary?.recentIntakes ?? []).map((row) => (
-                      <tr key={row.id} className="border-b border-ink-strong/5">
-                        <td className="py-1.5 font-mono text-ink-soft">{row.id.slice(0, 8)}…</td>
-                        <td className="py-1.5">{new Date(row.createdAt).toLocaleString()}</td>
-                        <td className="py-1.5">{row.severity ?? '—'}</td>
-                        <td className="py-1.5 uppercase">{row.locale ?? '—'}</td>
+                <div className="overflow-hidden rounded-2xl border border-ink-strong/10">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-surface-warm/60 text-ink-soft">
+                        <th className="px-3 py-2 text-start font-medium">ID</th>
+                        <th className="px-3 py-2 text-start font-medium">Received</th>
+                        <th className="px-3 py-2 text-start font-medium">Severity</th>
+                        <th className="px-3 py-2 text-start font-medium">Locale</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {(adminSummary?.recentIntakes ?? []).map((row) => (
+                        <tr key={row.id} className="border-b border-ink-strong/5 transition-colors hover:bg-surface-warm/30">
+                          <td className="px-3 py-2 font-mono text-ink-soft">{row.id.slice(0, 8)}…</td>
+                          <td className="px-3 py-2">{new Date(row.createdAt).toLocaleString()}</td>
+                          <td className="px-3 py-2">
+                            <span className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                              (row.severity ?? 0) >= 8 ? 'bg-accent-copper/15 text-accent-copper' :
+                              (row.severity ?? 0) >= 5 ? 'bg-amber-100 text-amber-700' :
+                              'bg-accent-olive/15 text-accent-olive'
+                            )}>
+                              {row.severity ?? '—'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 uppercase">{row.locale ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : !summaryLoading ? (
-                <p className="mt-3 text-xs text-ink-soft/60">No intakes yet, or admin-summary function not deployed.</p>
+                <p className="text-sm text-ink-soft/60">No intakes yet, or admin-summary function not deployed.</p>
               ) : null}
             </Card>
 
-            <div>
+            <div className="flex justify-end">
               <Button variant="ghost" onClick={async () => supabase?.auth.signOut()}>
                 Sign out
               </Button>
@@ -309,9 +349,17 @@ export function App(): JSX.Element {
         ) : null}
       </main>
 
-      <footer className="border-t border-ink-strong/10 bg-surface-white py-6 text-center text-xs text-ink-soft">
+      <footer className="border-t border-ink-strong/10 bg-surface-white py-6 text-center text-xs text-ink-soft dark:border-surface-white/10 dark:bg-ink-strong dark:text-ink-soft">
         Jobetes · Internal Admin · § 203 StGB · GDPR Art. 9 · ISO 27001 (mapping)
       </footer>
     </div>
+  );
+}
+
+export function App(): JSX.Element {
+  return (
+    <ToastProvider>
+      <AdminApp />
+    </ToastProvider>
   );
 }

@@ -133,4 +133,23 @@ export class PrismaIntakeRepo implements IntakeRepo {
   async close(): Promise<void> {
     await this.client.$disconnect();
   }
+
+  async ping(): Promise<boolean> {
+    try {
+      await this.client.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async findMany(options?: { limit?: number; offset?: number }): Promise<IntakeRecord[]> {
+    const rows = await this.client.intake.findMany({
+      orderBy: { createdAt: 'desc' },
+      skip: options?.offset ?? 0,
+      take: options?.limit ?? 50,
+      select: { id: true, createdAt: true },
+    });
+    return rows.map((r) => ({ id: r.id, receivedAt: r.createdAt.toISOString() }));
+  }
 }

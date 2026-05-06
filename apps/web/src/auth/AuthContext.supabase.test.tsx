@@ -50,7 +50,7 @@ describe('AuthProvider (configured Supabase)', () => {
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
-  it('exposes successful signInWithMagicLink and signOut', async () => {
+  it('exposes successful sendOtp and signOut', async () => {
     const mockSupabase = {
       auth: {
         getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
@@ -62,6 +62,7 @@ describe('AuthProvider (configured Supabase)', () => {
           },
         }),
         signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+        verifyOtp: vi.fn().mockResolvedValue({ error: null }),
         signOut: vi.fn().mockResolvedValue(undefined),
       },
     };
@@ -88,18 +89,25 @@ describe('AuthProvider (configured Supabase)', () => {
       expect(captured?.status).toBe('unauthenticated');
     });
 
-    const signInResult = await captured!.signInWithMagicLink('patient@example.com');
+    const sendResult = await captured!.sendOtp('patient@example.com');
+    const verifyResult = await captured!.verifyOtp('patient@example.com', '123456');
     await captured!.signOut();
 
-    expect(signInResult.ok).toBe(true);
+    expect(sendResult.ok).toBe(true);
     expect(mockSupabase.auth.signInWithOtp).toHaveBeenCalledWith({
       email: 'patient@example.com',
-      options: { emailRedirectTo: window.location.origin },
+      options: { shouldCreateUser: true },
+    });
+    expect(verifyResult.ok).toBe(true);
+    expect(mockSupabase.auth.verifyOtp).toHaveBeenCalledWith({
+      email: 'patient@example.com',
+      token: '123456',
+      type: 'email',
     });
     expect(mockSupabase.auth.signOut).toHaveBeenCalledOnce();
   });
 
-  it('returns signIn error when Supabase rejects OTP request', async () => {
+  it('returns error when Supabase rejects sendOtp request', async () => {
     const mockSupabase = {
       auth: {
         getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
@@ -137,8 +145,8 @@ describe('AuthProvider (configured Supabase)', () => {
       expect(captured?.status).toBe('unauthenticated');
     });
 
-    const signInResult = await captured!.signInWithMagicLink('patient@example.com');
+    const sendResult = await captured!.sendOtp('patient@example.com');
 
-    expect(signInResult).toEqual({ ok: false, error: 'Quota exceeded' });
+    expect(sendResult).toEqual({ ok: false, error: 'Quota exceeded' });
   });
 });

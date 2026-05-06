@@ -20,16 +20,31 @@ export function Stepper({ steps, currentIndex, className }: StepperProps) {
             <span
               aria-current={isActive ? 'step' : undefined}
               className={cn(
-                'flex size-7 items-center justify-center rounded-full border text-xs font-semibold',
+                'flex size-8 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors',
                 isDone && 'border-brand-secondary bg-brand-secondary text-white',
-                isActive && 'border-brand-primary bg-brand-primary text-white',
-                !isDone && !isActive && 'border-ink-strong/20 text-ink-soft',
+                isActive && 'border-brand-primary bg-brand-primary text-white ring-2 ring-brand-primary/20',
+                !isDone && !isActive && 'border-ink-strong/15 bg-surface-white text-ink-soft dark:border-surface-white/15 dark:bg-ink-strong dark:text-ink-soft',
               )}
             >
               {idx + 1}
             </span>
-            <span className={cn(isActive ? 'text-ink-strong' : 'text-ink-soft')}>{step}</span>
-            {idx < steps.length - 1 ? <span aria-hidden className="text-ink-soft">·</span> : null}
+            <span
+              className={cn(
+                'hidden font-medium sm:inline',
+                isActive ? 'text-ink-strong dark:text-surface-white' : 'text-ink-soft',
+              )}
+            >
+              {step}
+            </span>
+            {idx < steps.length - 1 ? (
+              <span
+                aria-hidden
+                className={cn(
+                  'mx-1 hidden h-px w-4 sm:inline-block',
+                  isDone ? 'bg-brand-secondary' : 'bg-ink-strong/15',
+                )}
+              />
+            ) : null}
           </li>
         );
       })}

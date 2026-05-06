@@ -25,7 +25,8 @@
     "a11y": "turbo run a11y",
     "quant": "turbo run typecheck lint test build",
     "doctor": "pnpm quant",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "smoke-test": "node scripts/smoke-test.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",

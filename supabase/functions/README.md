@@ -12,7 +12,10 @@ https://kzzihkwkhnnoixgogxzj.supabase.co/functions/v1/<name>
 |---|---|---|---|
 | `health` | GET | none | Liveness — `{status,service,timestamp}` |
 | `doctor-profile` | GET | none | Static doctor profile JSON, 5-min cache |
-| `intake` | POST | none (validates flags inline) | Patient upsert + Consent + Intake + AuditLog |
+| `intake` | POST | none (validates flags inline) | Patient upsert + Consent + Intake + AuditLog + notify-patient |
+| `triage` | POST | none | Non-diagnostic AI urgency (Gemini or mock) |
+| `admin-summary` | GET | Bearer JWT + DOCTOR_EMAILS allowlist | Intake/appointment counts + last 10 intakes for admin dashboard |
+| `notify-patient` | POST | service-role (internal only) | Sends locale-aware confirmation email via Resend |
 
 ## Smoke tests
 
@@ -42,8 +45,18 @@ The functions are version-controlled in this folder. To re-deploy after editing:
 ```bash
 # Option A (preferred): use the Supabase MCP tool from this Claude session
 # Option B (manual): supabase CLI
-supabase functions deploy health doctor-profile intake \
+supabase functions deploy health doctor-profile intake triage admin-summary notify-patient \
   --project-ref kzzihkwkhnnoixgogxzj
+```
+
+## Required Supabase secrets (set once)
+
+```bash
+supabase secrets set --project-ref kzzihkwkhnnoixgogxzj \
+  GEMINI_API_KEY="<your-key>" \
+  DOCTOR_EMAILS="wanderwellcare@gmail.com" \
+  RESEND_API_KEY="<your-resend-key>" \
+  FROM_EMAIL="noreply@jobetes.health"
 ```
 
 ## Why edge functions over Fly.io?

@@ -18,7 +18,7 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
   secondary:
     'bg-brand-secondary text-white hover:bg-brand-secondary/90 focus-visible:ring-brand-secondary',
   ghost:
-    'bg-transparent text-ink-strong hover:bg-surface-warm focus-visible:ring-brand-primary',
+    'bg-transparent text-ink-strong hover:bg-surface-warm focus-visible:ring-brand-primary dark:text-surface-white dark:hover:bg-surface-white/10',
   danger:
     'bg-accent-copper text-white hover:bg-accent-copper/90 focus-visible:ring-accent-copper',
 };

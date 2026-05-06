@@ -1,0 +1,79 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separatePatchReleases"
+  ],
+  "labels": ["dependencies"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "description": "Security-critical: auto-merge patch updates for production dependencies",
+      "matchUpdateTypes": ["patch"],
+      "matchDepTypes": ["dependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Group all Supabase packages together",
+      "matchPackagePatterns": ["@supabase/"],
+      "groupName": "Supabase",
+      "groupSlug": "supabase"
+    },
+    {
+      "description": "Group all Sentry packages together",
+      "matchPackagePatterns": ["@sentry/"],
+      "groupName": "Sentry",
+      "groupSlug": "sentry"
+    },
+    {
+      "description": "Group React ecosystem",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-hook-form",
+        "react-i18next",
+        "@types/react",
+        "@types/react-dom"
+      ],
+      "groupName": "React ecosystem",
+      "groupSlug": "react"
+    },
+    {
+      "description": "Group Fastify ecosystem",
+      "matchPackagePatterns": ["fastify", "@fastify/"],
+      "groupName": "Fastify ecosystem",
+      "groupSlug": "fastify"
+    },
+    {
+      "description": "Group Playwright",
+      "matchPackagePatterns": ["@playwright/", "playwright"],
+      "groupName": "Playwright",
+      "groupSlug": "playwright"
+    },
+    {
+      "description": "Major updates need human review — healthcare app, never auto-merge",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update", "needs-review"]
+    },
+    {
+      "description": "Pin GitHub Actions to SHA for supply-chain security",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "assignees": ["mahmoudalshdifat"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "timezone": "Asia/Amman",
+  "schedule": ["before 9am on Monday"]
+}

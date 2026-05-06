@@ -6,6 +6,11 @@ import type { IntakeRepo } from '../persistence/index.js';
 
 const ClaimSchema = z.object({ phone: PhoneSchema });
 
+const PaginationQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 /**
  * Authenticated patient self-service routes.
  *
@@ -25,11 +30,19 @@ export async function registerMeRoutes(
     return { user };
   });
 
-  app.get('/me/intakes', async (request) => {
+  app.get('/me/intakes', async (request, reply) => {
     const user = await requireAuth(request);
-    const intakes = await repo.findByUser(user.supabaseUserId);
+    const query = PaginationQuery.safeParse(request.query);
+    if (!query.success) {
+      return reply.status(400).send({ error: 'invalid_query', issues: query.error.issues });
+    }
+    const all = await repo.findByUser(user.supabaseUserId);
+    const { limit, offset } = query.data;
+    const intakes = all.slice(offset, offset + limit);
     return {
-      total: intakes.length,
+      total: all.length,
+      limit,
+      offset,
       intakes,
       persistence: repo.kind,
     };

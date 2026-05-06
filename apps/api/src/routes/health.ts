@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import type { IntakeRepo } from '../persistence/index.js';
 
-export async function registerHealthRoutes(app: FastifyInstance): Promise<void> {
+export async function registerHealthRoutes(app: FastifyInstance, repo?: IntakeRepo): Promise<void> {
   app.get(
     '/health',
     {
@@ -42,6 +43,9 @@ export async function registerHealthRoutes(app: FastifyInstance): Promise<void> 
         },
       },
     },
-    async () => ({ ready: true }),
+    async () => {
+      const dbOk = repo ? await repo.ping() : true;
+      return { ready: dbOk };
+    },
   );
 }

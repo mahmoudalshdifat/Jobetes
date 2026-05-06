@@ -31,4 +31,8 @@ export interface IntakeRepo {
   claimByPhone(supabaseUserId: string, phone: string): Promise<string | null>;
   /** Optional cleanup hook (closes Prisma client; no-op for memory). */
   close(): Promise<void>;
+  /** Health check — true if the backing store is reachable. */
+  ping(): Promise<boolean>;
+  /** Paginated list of all intakes (admin/doctor view). */
+  findMany(options?: { limit?: number; offset?: number }): Promise<IntakeRecord[]>;
 }

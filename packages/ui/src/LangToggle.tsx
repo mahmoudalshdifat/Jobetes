@@ -19,7 +19,8 @@ export function LangToggle({ current, onChange, label, className }: LangTogglePr
       role="radiogroup"
       aria-label={label}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border border-ink-strong/10 bg-surface-white p-1 text-sm',
+        'inline-flex items-center gap-1 rounded-full border border-ink-strong/10 bg-surface-white p-1 text-sm shadow-sm',
+        'dark:border-surface-white/10 dark:bg-ink-strong',
         className,
       )}
     >
@@ -31,8 +32,10 @@ export function LangToggle({ current, onChange, label, className }: LangTogglePr
           aria-checked={current === lang.code}
           onClick={() => onChange(lang.code)}
           className={cn(
-            'min-h-9 rounded-full px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary',
-            current === lang.code ? 'bg-brand-primary text-white' : 'text-ink-soft',
+            'min-h-9 rounded-full px-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary',
+            current === lang.code
+              ? 'bg-brand-primary text-white shadow-sm'
+              : 'text-ink-soft hover:bg-ink-strong/5',
           )}
         >
           {lang.label}

@@ -40,4 +40,15 @@ export class InMemoryIntakeRepo implements IntakeRepo {
   async close(): Promise<void> {
     // no-op
   }
+
+  async ping(): Promise<boolean> {
+    return true;
+  }
+
+  async findMany(options?: { limit?: number; offset?: number }): Promise<IntakeRecord[]> {
+    const all = Array.from(this.store.values());
+    const offset = options?.offset ?? 0;
+    const limit = options?.limit ?? all.length;
+    return all.slice(offset, offset + limit);
+  }
 }

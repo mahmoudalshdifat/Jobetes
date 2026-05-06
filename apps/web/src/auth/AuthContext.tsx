@@ -17,7 +17,8 @@ export type AuthState = {
 };
 
 export type AuthContextValue = AuthState & {
-  signInWithMagicLink: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  sendOtp: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  verifyOtp: (email: string, token: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
 };
 
@@ -55,15 +56,26 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     };
   }, [supabase]);
 
-  const signInWithMagicLink = useCallback(
+  const sendOtp = useCallback(
     async (email: string) => {
       if (!supabase) {
         return { ok: false, error: 'Supabase not configured (Phase 0 mock mode)' };
       }
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { shouldCreateUser: true },
       });
+      return error ? { ok: false, error: error.message } : { ok: true };
+    },
+    [supabase],
+  );
+
+  const verifyOtp = useCallback(
+    async (email: string, token: string) => {
+      if (!supabase) {
+        return { ok: false, error: 'Supabase not configured (Phase 0 mock mode)' };
+      }
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
       return error ? { ok: false, error: error.message } : { ok: true };
     },
     [supabase],
@@ -75,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, [supabase]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, signInWithMagicLink, signOut }),
-    [state, signInWithMagicLink, signOut],
+    () => ({ ...state, sendOtp, verifyOtp, signOut }),
+    [state, sendOtp, verifyOtp, signOut],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

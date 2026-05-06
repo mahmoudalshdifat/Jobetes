@@ -8,6 +8,7 @@ export function EmergencyBanner({ message, className }: EmergencyBannerProps) {
       role="note"
       className={cn(
         'border-b border-accent-copper/30 bg-accent-copper/10 px-4 py-2 text-center text-sm text-accent-copper',
+        'dark:bg-accent-copper/20',
         className,
       )}
     >

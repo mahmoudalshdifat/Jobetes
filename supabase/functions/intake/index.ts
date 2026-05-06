@@ -41,6 +41,10 @@ function validate(body: any): string | null {
   return null;
 }
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SB = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST')
@@ -62,9 +66,7 @@ Deno.serve(async (req) => {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
 
-  const url = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const sb = createClient(url, serviceKey, { auth: { persistSession: false } });
+  const sb = SB;
 
   const { data: patient, error: pErr } = await sb
     .from('Patient')
@@ -135,6 +137,24 @@ Deno.serve(async (req) => {
     event: 'intake.created',
     resourceId: intake.id,
   });
+
+  // Fire-and-forget patient confirmation email — never blocks the response.
+  // notify-patient gracefully no-ops if RESEND_API_KEY / email are missing.
+  if (body.email) {
+    const notifyUrl = `${SUPABASE_URL}/functions/v1/notify-patient`;
+    void fetch(notifyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SERVICE_KEY}`,
+      },
+      body: JSON.stringify({
+        firstName: body.firstName,
+        email: body.email,
+        preferredLocale: body.preferredLocale ?? 'en',
+      }),
+    }).catch((err) => console.warn('[intake] notify-patient call failed:', err));
+  }
 
   return new Response(JSON.stringify({ id: intake.id, receivedAt: intake.createdAt }), {
     status: 201,

@@ -21,6 +21,8 @@ export function Card({
     <Tag
       className={cn(
         'rounded-3xl border border-ink-strong/10 bg-surface-white p-6 shadow-sm',
+        'transition-shadow duration-200 hover:shadow-md',
+        'dark:border-surface-white/10 dark:bg-ink-strong',
         'sm:p-8',
         className,
       )}

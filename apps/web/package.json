@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
-    "@jobetes/ai-gemini": "workspace:*",
     "@jobetes/i18n": "workspace:*",
     "@jobetes/shared-schemas": "workspace:*",
     "@jobetes/ui": "workspace:*",

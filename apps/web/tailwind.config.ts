@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 export default {
+  darkMode: 'class',
   content: [
     './index.html',
     './src/**/*.{ts,tsx}',
@@ -37,7 +38,7 @@ export default {
         ],
         arabic: ['IBM Plex Sans Arabic', 'Noto Naskh Arabic', 'system-ui', 'sans-serif'],
       },
-      maxWidth: { reading: '40rem' },
+      maxWidth: { reading: '72ch' },
       borderRadius: { '4xl': '2rem' },
     },
   },

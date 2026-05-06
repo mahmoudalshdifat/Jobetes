@@ -3,7 +3,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { Button, Card, Field, Stepper } from '@jobetes/ui';
+import { Button, Card, Field, Input, Select, Textarea, Stepper } from '@jobetes/ui';
 import { PatientIntakeSchema, type PatientIntake, type Locale } from '@jobetes/shared-schemas';
 import type { TriageResult } from '@jobetes/shared-schemas';
 
@@ -29,6 +29,7 @@ export function IntakePage(): JSX.Element {
   const { t, i18n } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [triageResult, setTriageResult] = useState<TriageResult | null>(null);
 
   const { register, handleSubmit, formState, control } = useForm<PatientIntake>({
@@ -59,6 +60,7 @@ export function IntakePage(): JSX.Element {
   const watched = useWatch({ control });
 
   const onSubmit = handleSubmit(async (data) => {
+    setSubmitError(null);
     // Filter empty textarea entries and set acceptedAt at submit time
     const submitData: PatientIntake = {
       ...data,
@@ -74,7 +76,17 @@ export function IntakePage(): JSX.Element {
       body: JSON.stringify(submitData),
     });
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      let msg = t('intake.error.generic');
+      try {
+        const body = (await res.json()) as { error?: string };
+        if (body.error) msg = body.error;
+      } catch {
+        // ignore parse errors
+      }
+      setSubmitError(msg);
+      return;
+    }
     setSubmitted(true);
 
     // Phase 3: AI triage — fire and update state when ready
@@ -141,74 +153,75 @@ export function IntakePage(): JSX.Element {
 
       <form onSubmit={onSubmit} className="space-y-6" noValidate>
         {/* Step 0 — Identity */}
+        {submitError ? (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {submitError}
+          </div>
+        ) : null}
+
         {stepIndex === 0 ? (
           <Card title={t('intake.step.identity')}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={t('intake.field.firstName')} required error={formState.errors.firstName?.message}>
                 {(p) => (
-                  <input
+                  <Input
                     {...p}
                     {...register('firstName')}
                     type="text"
                     autoComplete="given-name"
-                    className="h-12 rounded-2xl border border-ink-strong/15 px-4"
                   />
                 )}
               </Field>
               <Field label={t('intake.field.lastName')} required error={formState.errors.lastName?.message}>
                 {(p) => (
-                  <input
+                  <Input
                     {...p}
                     {...register('lastName')}
                     type="text"
                     autoComplete="family-name"
-                    className="h-12 rounded-2xl border border-ink-strong/15 px-4"
                   />
                 )}
               </Field>
               <Field label={t('intake.field.dob')} required error={formState.errors.dateOfBirth?.message}>
                 {(p) => (
-                  <input
+                  <Input
                     {...p}
                     {...register('dateOfBirth')}
                     type="date"
                     autoComplete="bday"
-                    className="h-12 rounded-2xl border border-ink-strong/15 px-4"
                   />
                 )}
               </Field>
               <Field label={t('intake.field.gender')} required error={formState.errors.gender?.message}>
                 {(p) => (
-                  <select {...p} {...register('gender')} className="h-12 rounded-2xl border border-ink-strong/15 px-4">
+                  <Select {...p} {...register('gender')}>
                     <option value="male">{t('gender.male')}</option>
                     <option value="female">{t('gender.female')}</option>
                     <option value="other">{t('gender.other')}</option>
                     <option value="prefer_not_to_say">{t('gender.prefer_not_to_say')}</option>
-                  </select>
+                  </Select>
                 )}
               </Field>
               <Field label={t('intake.field.phone')} required error={formState.errors.phone?.message}>
                 {(p) => (
-                  <input
+                  <Input
                     {...p}
                     {...register('phone')}
                     type="tel"
                     autoComplete="tel"
                     inputMode="tel"
                     placeholder="+962…"
-                    className="h-12 rounded-2xl border border-ink-strong/15 px-4"
                   />
                 )}
               </Field>
               <Field label={t('intake.field.email')} error={formState.errors.email?.message}>
                 {(p) => (
-                  <input
+                  <Input
                     {...p}
                     {...register('email', { setValueAs: (v: string) => v === '' ? undefined : v })}
                     type="email"
                     autoComplete="email"
                     inputMode="email"
-                    className="h-12 rounded-2xl border border-ink-strong/15 px-4"
                   />
                 )}
               </Field>
@@ -221,12 +234,12 @@ export function IntakePage(): JSX.Element {
           <Card title={t('intake.step.symptoms')}>
             <Field label={t('intake.field.symptoms')} required>
               {(p) => (
-                <select
+                <Select
                   {...p}
                   multiple
                   size={7}
                   {...register('primarySymptoms')}
-                  className="rounded-2xl border border-ink-strong/15 p-3 w-full"
+                  className="h-auto py-3"
                 >
                   <option value="abdominal_pain">{t('symptom.abdominal_pain')}</option>
                   <option value="heartburn_reflux">{t('symptom.heartburn_reflux')}</option>
@@ -239,19 +252,18 @@ export function IntakePage(): JSX.Element {
                   <option value="difficulty_swallowing">{t('symptom.difficulty_swallowing')}</option>
                   <option value="jaundice">{t('symptom.jaundice')}</option>
                   <option value="other">{t('symptom.other')}</option>
-                </select>
+                </Select>
               )}
             </Field>
             <Field label={t('intake.field.symptomDuration')} error={formState.errors.symptomDurationDays?.message}>
               {(p) => (
-                <input
+                <Input
                   {...p}
                   {...register('symptomDurationDays', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
                   type="number"
                   min={0}
                   max={1825}
                   inputMode="numeric"
-                  className="h-12 rounded-2xl border border-ink-strong/15 px-4 w-full"
                 />
               )}
             </Field>
@@ -265,7 +277,7 @@ export function IntakePage(): JSX.Element {
                     min={0}
                     max={10}
                     step={1}
-                    className="w-full"
+                    className="w-full accent-brand-primary"
                   />
                   <div className="flex justify-between text-xs text-ink-soft">
                     <span>0</span><span>5</span><span>10</span>
@@ -275,43 +287,39 @@ export function IntakePage(): JSX.Element {
             </Field>
             <Field label={t('intake.field.symptoms.other')} hint={t('intake.field.symptoms.other.hint')}>
               {(p) => (
-                <textarea
+                <Textarea
                   {...p}
                   {...register('symptomsOtherText')}
                   rows={2}
                   maxLength={500}
-                  className="rounded-2xl border border-ink-strong/15 px-4 py-3 w-full"
                 />
               )}
             </Field>
             <Field label={t('intake.field.medications')}>
               {(p) => (
-                <textarea
+                <Textarea
                   {...p}
                   {...register('currentMedications.0')}
                   rows={2}
                   placeholder={t('intake.field.medications.hint')}
-                  className="rounded-2xl border border-ink-strong/15 px-4 py-3 w-full"
                 />
               )}
             </Field>
             <Field label={t('intake.field.allergies')}>
               {(p) => (
-                <input
+                <Input
                   {...p}
                   {...register('knownAllergies.0')}
                   type="text"
-                  className="h-12 rounded-2xl border border-ink-strong/15 px-4 w-full"
                 />
               )}
             </Field>
             <Field label={t('intake.field.conditions')}>
               {(p) => (
-                <input
+                <Input
                   {...p}
                   {...register('knownConditions.0')}
                   type="text"
-                  className="h-12 rounded-2xl border border-ink-strong/15 px-4 w-full"
                 />
               )}
             </Field>
@@ -323,11 +331,11 @@ export function IntakePage(): JSX.Element {
           <Card title={t('intake.step.context')}>
             <Field label={t('intake.field.doctorGenderPreference')}>
               {(p) => (
-                <select {...p} {...register('prefersDoctorGender', { setValueAs: (v: string) => v === '' ? undefined : v })} className="h-12 rounded-2xl border border-ink-strong/15 px-4 w-full">
+                <Select {...p} {...register('prefersDoctorGender', { setValueAs: (v: string) => v === '' ? undefined : v })}>
                   <option value="">{t('gender.no_preference')}</option>
                   <option value="male">{t('gender.male')}</option>
                   <option value="female">{t('gender.female')}</option>
-                </select>
+                </Select>
               )}
             </Field>
             <label className="mt-4 flex items-center gap-2">
@@ -413,11 +421,34 @@ export function IntakePage(): JSX.Element {
             disabled={stepIndex === 0}
             onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
           >
-            ←
+            {t('intake.nav.back')}
           </Button>
           {stepIndex < TOTAL_STEPS - 1 ? (
-            <Button type="button" onClick={() => setStepIndex((i) => Math.min(TOTAL_STEPS - 1, i + 1))}>
-              →
+            <Button
+              type="button"
+              onClick={() => {
+                // Validate current step before advancing
+                const stepFields: Record<number, string[]> = {
+                  0: ['firstName', 'lastName', 'dateOfBirth', 'gender', 'phone'],
+                  1: ['primarySymptoms', 'severity'],
+                  2: [],
+                  3: ['consent.termsOfService', 'consent.privacyPolicy', 'consent.processingHealthData', 'consent.crossBorderTransfer'],
+                };
+                const fields = stepFields[stepIndex] ?? [];
+                const hasErrors = fields.some((f) => {
+                  const parts = f.split('.');
+                  let err: unknown = formState.errors;
+                  for (const p of parts) {
+                    err = (err as Record<string, unknown>)?.[p];
+                  }
+                  return !!err;
+                });
+                if (!hasErrors) {
+                  setStepIndex((i) => Math.min(TOTAL_STEPS - 1, i + 1));
+                }
+              }}
+            >
+              {t('intake.nav.next')}
             </Button>
           ) : (
             <Button type="submit" loading={formState.isSubmitting}>
@@ -429,4 +460,3 @@ export function IntakePage(): JSX.Element {
     </section>
   );
 }
-

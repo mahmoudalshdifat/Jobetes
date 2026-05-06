@@ -12,6 +12,11 @@ const ConfigSchema = z.object({
   SENTRY_DSN: z.string().optional().default(''),
   DATABASE_URL: z.string().optional().default(''),
   SUPABASE_URL: z.string().optional().default(''),
+  /**
+   * Optional fire-and-forget webhook (e.g. operator-bot endpoint) that receives
+   * a JSON POST on new appointments and intakes. Empty = feature disabled.
+   */
+  NOTIFY_WEBHOOK_URL: z.string().optional().default(''),
 });
 
 export type AppConfig = z.infer<typeof ConfigSchema>;

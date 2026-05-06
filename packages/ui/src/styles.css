@@ -6,8 +6,68 @@
   --color-brand-secondary: #2C8C9E;
   --color-surface-warm: #F8F4EE;
   --color-surface-white: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
   --color-ink-strong: #0F1B2D;
   --color-ink-soft: #4A5568;
   --color-accent-olive: #6B7F4E;
   --color-accent-copper: #B8654A;
+  --color-border: rgba(15, 27, 45, 0.10);
+}
+
+.dark {
+  --color-brand-primary: #4A9FD8;
+  --color-brand-secondary: #4DB8C9;
+  --color-surface-warm: #1A1F2B;
+  --color-surface-white: #111827;
+  --color-surface-elevated: #1F2937;
+  --color-ink-strong: #F1F5F9;
+  --color-ink-soft: #94A3B8;
+  --color-accent-olive: #8FA872;
+  --color-accent-copper: #D4846A;
+  --color-border: rgba(241, 245, 249, 0.10);
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 200ms ease-out forwards;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 27, 45, 0.10) 25%,
+    rgba(15, 27, 45, 0.18) 50%,
+    rgba(15, 27, 45, 0.10) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0.10) 25%,
+    rgba(241, 245, 249, 0.18) 50%,
+    rgba(241, 245, 249, 0.10) 75%
+  );
+  background-size: 200% 100%;
 }

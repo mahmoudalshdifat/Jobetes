@@ -101,6 +101,7 @@ model Intake {
   consentId             String    @unique @db.Uuid
 
   @@index([patientId, createdAt])
+  @@index([createdAt])
 }
 
 model Consent {
@@ -139,6 +140,8 @@ model Triage {
   latencyMs                Int
   tokensIn                 Int?
   tokensOut                Int?
+
+  @@index([intakeId])
 }
 
 model Appointment {
@@ -155,6 +158,7 @@ model Appointment {
   notes       String?            // doctor-only notes
 
   @@index([patientId, status])
+  @@index([status])
 }
 
 model Message {
@@ -169,6 +173,7 @@ model Message {
   locale      Locale
 
   @@index([patientId, createdAt])
+  @@index([createdAt])
 }
 
 // AuditLog tracks security-relevant events (data access, exports, deletions).
@@ -184,4 +189,5 @@ model AuditLog {
   metadata    Json?
 
   @@index([event, createdAt])
+  @@index([createdAt])
 }

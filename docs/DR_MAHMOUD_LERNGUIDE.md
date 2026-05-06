@@ -111,7 +111,7 @@ function PatientCard({ name, diagnose }) {
   return (
     <div className="border rounded p-4">
       <h2>{name}</h2>
-      <p>{diagnose}</p>
+      <p>{diagnose}</p>f
     </div>
   );
 }

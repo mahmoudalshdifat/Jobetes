@@ -26,6 +26,11 @@ const ALLOWED_EMAILS: Set<string> = new Set(
     .filter(Boolean),
 );
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SB = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'GET')
@@ -41,12 +46,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
   // Verify JWT by calling getUser with the caller token
-  const authClient = createClient(supabaseUrl, anonKey, {
+  const authClient = createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
@@ -67,7 +68,7 @@ Deno.serve(async (req) => {
   }
 
   // --- Data (service role, bypasses RLS) ---
-  const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const sb = SB;
 
   const [intakeCount, apptCount, recentIntakes] = await Promise.all([
     sb.from('Intake').select('id', { count: 'exact', head: true }),

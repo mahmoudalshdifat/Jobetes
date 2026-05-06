@@ -9,7 +9,37 @@ import { AppointmentRequestSchema } from '@jobetes/shared-schemas';
  */
 const requests = new Map<string, { id: string; receivedAt: string; status: 'requested' }>();
 
-export async function registerAppointmentRoutes(app: FastifyInstance): Promise<void> {
+/**
+ * Fire-and-forget notification to the operator webhook (operator-bot or an
+ * alerting service). Errors are swallowed so they never affect the patient
+ * response — the log is the audit trail.
+ */
+async function notifyWebhook(
+  webhookUrl: string,
+  event: string,
+  payload: Record<string, unknown>,
+  log: { warn: (obj: object, msg?: string) => void },
+): Promise<void> {
+  if (!webhookUrl) return;
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, payload, timestamp: new Date().toISOString() }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) {
+      log.warn({ webhookStatus: res.status, event }, 'notify webhook returned non-ok status');
+    }
+  } catch (err) {
+    log.warn({ err, event }, 'notify webhook call failed (swallowed)');
+  }
+}
+
+export async function registerAppointmentRoutes(
+  app: FastifyInstance,
+  notifyWebhookUrl = '',
+): Promise<void> {
   app.post('/appointments', async (request, reply) => {
     const parsed = AppointmentRequestSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -26,6 +56,20 @@ export async function registerAppointmentRoutes(app: FastifyInstance): Promise<v
     };
     requests.set(id, record);
     request.log.info({ appointmentId: id }, 'appointment requested');
+
+    // Notify operator (fire-and-forget — never blocks patient response).
+    void notifyWebhook(
+      notifyWebhookUrl,
+      'appointment.requested',
+      {
+        appointmentId: id,
+        patientName: parsed.data.patientName,
+        preferredWindow: parsed.data.preferredWindow,
+        preferredLocale: parsed.data.preferredLocale,
+      },
+      request.log,
+    );
+
     return reply.status(201).send(record);
   });
 
