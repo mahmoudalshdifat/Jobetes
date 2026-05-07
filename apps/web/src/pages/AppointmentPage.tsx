@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Field } from '@jobetes/ui';
+import { Button, Card, Field, Input, Select, Textarea } from '@jobetes/ui';
 import {
   AppointmentRequestSchema,
   type AppointmentRequest,
@@ -61,11 +61,10 @@ export function AppointmentPage(): JSX.Element {
           error={formState.errors.patientName?.message}
         >
           {(p) => (
-            <input
+            <Input
               {...p}
               {...register('patientName')}
               autoComplete="name"
-              className="h-12 rounded-2xl border border-ink-strong/15 px-4"
             />
           )}
         </Field>
@@ -76,14 +75,13 @@ export function AppointmentPage(): JSX.Element {
           error={formState.errors.phone?.message}
         >
           {(p) => (
-            <input
+            <Input
               {...p}
               {...register('phone')}
               type="tel"
               autoComplete="tel"
               inputMode="tel"
               placeholder="+962…"
-              className="h-12 rounded-2xl border border-ink-strong/15 px-4"
             />
           )}
         </Field>
@@ -94,27 +92,22 @@ export function AppointmentPage(): JSX.Element {
           error={formState.errors.reason?.message}
         >
           {(p) => (
-            <textarea
+            <Textarea
               {...p}
               {...register('reason')}
               rows={3}
-              className="rounded-2xl border border-ink-strong/15 px-4 py-3"
             />
           )}
         </Field>
 
         <Field label={t('appointment.field.preferredWindow')}>
           {(p) => (
-            <select
-              {...p}
-              {...register('preferredWindow')}
-              className="h-12 rounded-2xl border border-ink-strong/15 px-4"
-            >
+            <Select {...p} {...register('preferredWindow')}>
               <option value="any">{t('appointment.window.any')}</option>
               <option value="morning">{t('appointment.window.morning')}</option>
               <option value="afternoon">{t('appointment.window.afternoon')}</option>
               <option value="evening">{t('appointment.window.evening')}</option>
-            </select>
+            </Select>
           )}
         </Field>
 
@@ -124,7 +117,7 @@ export function AppointmentPage(): JSX.Element {
           hint={t('appointment.field.preferredDates.hint')}
         >
           {(p) => (
-            <input
+            <Input
               {...p}
               {...register('preferredDates', {
                 setValueAs: (v: string) =>
@@ -135,7 +128,6 @@ export function AppointmentPage(): JSX.Element {
               })}
               type="text"
               placeholder="2026-06-01, 2026-06-02"
-              className="h-12 rounded-2xl border border-ink-strong/15 px-4"
             />
           )}
         </Field>
