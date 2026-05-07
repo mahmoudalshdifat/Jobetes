@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PatientIntake } from '@jobetes/shared-schemas';
+import type { AppointmentRequest, PatientIntake } from '@jobetes/shared-schemas';
 import { PrismaIntakeRepo } from './prisma-repo.js';
 
 const sample: PatientIntake = {
@@ -27,6 +27,15 @@ const sample: PatientIntake = {
     marketingOptIn: false,
     familyAccessOptIn: false,
   },
+};
+
+const appointment: AppointmentRequest = {
+  patientName: 'Layla Haddad',
+  phone: '+962799123456',
+  preferredLocale: 'ar',
+  reason: 'follow up on heartburn',
+  preferredWindow: 'morning',
+  preferredDates: ['2026-06-01'],
 };
 
 /**
@@ -200,5 +209,123 @@ describe('PrismaIntakeRepo', () => {
     };
     const repo = new PrismaIntakeRepo(client as never);
     expect(await repo.claimByPhone('attacker', '+962799123456')).toBeNull();
+  });
+
+  it('creates a persisted appointment with patient lookup and audit log', async () => {
+    const auditCreate = vi.fn(async () => ({}));
+    const appointmentCreate = vi.fn(async () => ({
+      id: 'appt-1',
+      requestedAt: new Date('2026-06-01T08:00:00Z'),
+      status: 'requested',
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: null,
+      scheduledAt: null,
+    }));
+    const client = {
+      patient: { findUnique: vi.fn(async () => ({ id: 'p-1' })) },
+      appointment: { create: appointmentCreate },
+      auditLog: { create: auditCreate },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+
+    const result = await repo.createAppointment(appointment);
+
+    expect(appointmentCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ patientId: 'p-1', reason: appointment.reason }),
+      }),
+    );
+    expect(result).toEqual({
+      id: 'appt-1',
+      receivedAt: '2026-06-01T08:00:00.000Z',
+      status: 'requested',
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: undefined,
+      scheduledAt: undefined,
+    });
+    expect(auditCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ event: 'appointment.requested', actorId: 'p-1' }),
+      }),
+    );
+  });
+
+  it('lists appointments by phone in descending requestedAt order', async () => {
+    const findMany = vi.fn(async () => [
+      {
+        id: 'appt-2',
+        requestedAt: new Date('2026-06-02T08:00:00Z'),
+        status: 'confirmed',
+        patientName: appointment.patientName,
+        phone: appointment.phone,
+        preferredLocale: appointment.preferredLocale,
+        reason: appointment.reason,
+        preferredWindow: appointment.preferredWindow,
+        preferredDates: appointment.preferredDates,
+        notes: null,
+        scheduledAt: new Date('2026-06-03T09:00:00Z'),
+      },
+    ]);
+    const client = { appointment: { findMany } };
+    const repo = new PrismaIntakeRepo(client as never);
+
+    const result = await repo.findAppointmentsByPhone(appointment.phone);
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { phone: appointment.phone }, orderBy: { requestedAt: 'desc' } }),
+    );
+    expect(result[0]).toEqual({
+      id: 'appt-2',
+      receivedAt: '2026-06-02T08:00:00.000Z',
+      status: 'confirmed',
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: undefined,
+      scheduledAt: '2026-06-03T09:00:00.000Z',
+    });
+  });
+
+  it('updates appointment status and maps scheduledAt', async () => {
+    const auditCreate = vi.fn(async () => ({}));
+    const update = vi.fn(async () => ({
+      id: 'appt-1',
+      status: 'confirmed',
+      scheduledAt: new Date('2026-06-01T10:00:00Z'),
+    }));
+    const client = {
+      appointment: { update },
+      auditLog: { create: auditCreate },
+    };
+    const repo = new PrismaIntakeRepo(client as never);
+
+    const result = await repo.updateAppointment('appt-1', {
+      status: 'confirmed',
+      scheduledAt: '2026-06-01T10:00:00.000Z',
+    });
+
+    expect(result).toEqual({
+      id: 'appt-1',
+      status: 'confirmed',
+      scheduledAt: '2026-06-01T10:00:00.000Z',
+    });
+    expect(auditCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ event: 'appointment.updated', resourceId: 'appt-1' }),
+      }),
+    );
   });
 });

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Faq, Testimonials, WhatsAppButton, WhyGerman } from '@jobetes/ui';
+import { Button, Card, Faq, WhatsAppButton, WhyGerman } from '@jobetes/ui';
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? '';
 

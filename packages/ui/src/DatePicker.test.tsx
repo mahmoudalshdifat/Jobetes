@@ -22,7 +22,7 @@ describe('DatePicker', () => {
     const day15 = screen.getByRole('button', { name: '15' });
     fireEvent.click(day15);
     expect(onChange).toHaveBeenCalledTimes(1);
-    const val = onChange.mock.calls[0][0];
+    const val = onChange.mock.calls[0]?.[0];
     expect(val).toMatch(/^\d{4}-\d{2}-15$/);
   });
 

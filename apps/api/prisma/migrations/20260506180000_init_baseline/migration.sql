@@ -92,7 +92,13 @@ CREATE TABLE "Appointment" (
     "id" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "patientId" UUID NOT NULL,
+    "patientId" UUID,
+    "patientName" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "preferredLocale" "Locale" NOT NULL,
+    "reason" TEXT NOT NULL,
+    "preferredWindow" TEXT NOT NULL,
+    "preferredDates" TEXT[],
     "status" "AppointmentStatus" NOT NULL DEFAULT 'requested',
     "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "scheduledAt" TIMESTAMP(3),
@@ -165,6 +171,9 @@ CREATE INDEX "Triage_urgency_createdAt_idx" ON "Triage"("urgency", "createdAt");
 CREATE INDEX "Appointment_patientId_status_idx" ON "Appointment"("patientId", "status");
 
 -- CreateIndex
+CREATE INDEX "Appointment_phone_status_idx" ON "Appointment"("phone", "status");
+
+-- CreateIndex
 CREATE INDEX "Appointment_status_idx" ON "Appointment"("status");
 
 -- CreateIndex
@@ -189,7 +198,7 @@ ALTER TABLE "Intake" ADD CONSTRAINT "Intake_consentId_fkey" FOREIGN KEY ("consen
 ALTER TABLE "Triage" ADD CONSTRAINT "Triage_intakeId_fkey" FOREIGN KEY ("intakeId") REFERENCES "Intake"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Message" ADD CONSTRAINT "Message_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE CASCADE ON UPDATE CASCADE;

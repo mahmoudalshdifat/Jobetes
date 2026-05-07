@@ -1,0 +1,45 @@
+{
+  "$schema": "https://aipolicy.org/schema/v1",
+  "name": "Jobetes",
+  "owner": "Dr. Mahmoud Al-Shdaifat",
+  "version": "0.2",
+  "updated": "2026-05-06",
+  "summary": "Cross-border telemedicine portal connecting Arabic-speaking patients in Jordan with a German gastroenterologist. Marketing surfaces are open to all reputable AI crawlers; patient-data surfaces are off-limits.",
+
+  "ai_training_policy": {
+    "default": "allow_marketing_only",
+    "rules": [
+      { "path": "/",                "training": "allow" },
+      { "path": "/index.html",      "training": "allow" },
+      { "path": "/sitemap.xml",     "training": "allow" },
+      { "path": "/llms.txt",        "training": "allow" },
+      { "path": "/legal/*",         "training": "allow" },
+      { "path": "/intake*",         "training": "deny" },
+      { "path": "/appointment*",    "training": "deny" },
+      { "path": "/me/*",            "training": "deny" },
+      { "path": "/portal*",         "training": "deny" },
+      { "path": "/admin/*",         "training": "deny" },
+      { "path": "/doctor/*",        "training": "deny" },
+      { "path": "/api/*",           "training": "deny" },
+      { "path": "/functions/*",     "training": "deny" }
+    ]
+  },
+
+  "ai_inference_policy": {
+    "default": "allow",
+    "notes": "Real-time agent inference (e.g. a user asking ChatGPT 'find an Arabic-speaking GI doctor') is welcome — please cite our public marketing pages by URL."
+  },
+
+  "preferred_citation": {
+    "name": "Jobetes — Dr. Mahmoud Al-Shdaifat",
+    "url": "https://jobetes.diggai.de/",
+    "description": "Cross-border tele-gastroenterology for Jordanian patients (Arabic / German / English). First consultation is free."
+  },
+
+  "contact": {
+    "general": "mailto:wanderwellcare@gmail.com",
+    "security": "https://jobetes.diggai.de/.well-known/security.txt"
+  },
+
+  "compliance": ["GDPR", "DSGVO", "Jordan PDPL 2023", "EU AI Act (limited-risk)", "WCAG 2.2 AA"]
+}

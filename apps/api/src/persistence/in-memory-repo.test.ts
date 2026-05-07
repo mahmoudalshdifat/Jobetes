@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PatientIntake } from '@jobetes/shared-schemas';
+import type { AppointmentRequest, PatientIntake } from '@jobetes/shared-schemas';
 import { InMemoryIntakeRepo } from './in-memory-repo.js';
 
 const sample: PatientIntake = {
@@ -27,6 +27,15 @@ const sample: PatientIntake = {
     marketingOptIn: false,
     familyAccessOptIn: false,
   },
+};
+
+const appointment: AppointmentRequest = {
+  patientName: 'Layla Haddad',
+  phone: '+962799123456',
+  preferredLocale: 'ar',
+  reason: 'follow up on heartburn',
+  preferredWindow: 'morning',
+  preferredDates: ['2026-06-01'],
 };
 
 describe('InMemoryIntakeRepo', () => {
@@ -72,6 +81,32 @@ describe('InMemoryIntakeRepo', () => {
   it('claimByPhone returns null (Phase-0 has no patient registry)', async () => {
     const repo = new InMemoryIntakeRepo();
     expect(await repo.claimByPhone('user', '+962799123456')).toBeNull();
+  });
+
+  it('stores appointments in memory and can read them back by id and phone', async () => {
+    const repo = new InMemoryIntakeRepo();
+    const created = await repo.createAppointment(appointment);
+
+    expect(created.status).toBe('requested');
+    expect((await repo.findAppointmentById(created.id))?.reason).toBe('follow up on heartburn');
+    expect(await repo.findAppointmentsByPhone(appointment.phone)).toHaveLength(1);
+    expect(await repo.findAllAppointments()).toHaveLength(1);
+  });
+
+  it('updates appointment status and scheduledAt in memory', async () => {
+    const repo = new InMemoryIntakeRepo();
+    const created = await repo.createAppointment(appointment);
+
+    const updated = await repo.updateAppointment(created.id, {
+      status: 'confirmed',
+      scheduledAt: '2026-06-01T10:00:00.000Z',
+    });
+
+    expect(updated).toEqual({
+      id: created.id,
+      status: 'confirmed',
+      scheduledAt: '2026-06-01T10:00:00.000Z',
+    });
   });
 
   it('isStaff returns false by default; true after registerDoctor', async () => {

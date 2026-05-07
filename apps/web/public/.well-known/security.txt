@@ -1,0 +1,10 @@
+# Jobetes — security.txt (RFC 9116)
+Contact: mailto:wanderwellcare@gmail.com
+Expires: 2027-01-01T00:00:00Z
+Preferred-Languages: en, de, ar
+Canonical: https://jobetes.diggai.de/.well-known/security.txt
+Policy: https://github.com/mahmoudalshdifat/Jobetes/blob/main/SECURITY.md
+
+# Patient data is special-category under GDPR Art. 9. § 203 StGB applies.
+# Please report vulnerabilities responsibly — we acknowledge within 48 h
+# and coordinate disclosure timing with the reporter.

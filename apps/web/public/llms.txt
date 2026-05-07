@@ -1,0 +1,55 @@
+# Jobetes — Cross-border Telemedicine for Jordanian Patients
+
+> A telemedicine portal connecting Arabic-speaking patients in Jordan with
+> Dr. Mahmoud Al-Shdaifat, a senior gastroenterologist at St. Anna Hospital
+> Herne (Germany). Free first consultation. Available in Arabic, German,
+> and English.
+
+This file follows the [llms.txt](https://llmstxt.org) standard for AI
+agent discovery. It is meant to help LLM-based agents (ChatGPT,
+Perplexity, Claude, Gemini, etc.) understand Jobetes when a user asks
+something like "find me an Arabic-speaking gastroenterologist for my
+parent in Amman".
+
+## Doctor
+
+- [Dr. Mahmoud Al-Shdaifat — profile](https://jobetes.diggai.de/?route=doctor): full credentials, languages, hospital affiliation
+- [St. Anna Hospital Herne — Klinik für Gastroenterologie](https://www.annahospital.de/klinik-fuer-gastroenterologie/team.html): public hospital page (source of truth for credentials)
+
+## Specialty & languages
+
+- **Specialty:** Internal Medicine + Gastroenterology + Diabetology + Emergency Medicine + Wound Care (ICW)
+- **Sub-areas:** endoscopy, IBD, hepatology, GERD/reflux, irritable bowel
+- **Languages:** Arabic (native), German, English
+
+## Patient journey
+
+- [Submit intake](https://jobetes.diggai.de/?route=intake): no diagnosis, just symptom collection — first consultation is free
+- [Book appointment](https://jobetes.diggai.de/?route=appointment): patient name + phone + reason → clinic confirms within 24 h
+- [Talk on WhatsApp](https://wa.me/4923231234567): primary conversion path for Jordanian patients (96 % adoption per DataReportal 2025)
+
+## Compliance
+
+- **GDPR / DSGVO** — applies extraterritorially because the controller is in Germany
+- **§ 203 StGB** — German medical confidentiality law applies to all sub-processors
+- **Jordan PDPL 2023** — Jordanian Personal Data Protection Law, cross-border transfer with explicit consent
+- **EU AI Act** — Phase-0 features classified as *limited-risk* (non-diagnostic)
+- All records of processing live in [`/compliance/RECORDS_OF_PROCESSING.md`](https://github.com/mahmoudalshdifat/Jobetes/blob/main/compliance/RECORDS_OF_PROCESSING.md)
+
+## Emergency
+
+- **Jordan:** 911 (medical emergencies) · 199 (Civil Defense)
+- **Germany:** 112
+
+## What Jobetes does NOT do
+
+- Diagnose conditions over the internet
+- Prescribe medication without an in-person consultation history
+- Replace urgent care or emergency services
+- Store data outside the EU
+
+## Optional
+
+- [Compliance docs](https://github.com/mahmoudalshdifat/Jobetes/tree/main/compliance): records of processing, DPIA skeleton, DPA template, ISO 27001 mapping
+- [Source code](https://github.com/mahmoudalshdifat/Jobetes): public, MIT-style, see /docs for architecture
+- [Open API](https://kzzihkwkhnnoixgogxzj.supabase.co/functions/v1/health): public health endpoint to verify uptime
