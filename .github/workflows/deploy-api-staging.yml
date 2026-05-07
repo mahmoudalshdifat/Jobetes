@@ -27,7 +27,7 @@ jobs:
       group: fly-deploy-staging
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to staging
         run: flyctl deploy --config infrastructure/fly.staging.toml --app ${{ vars.FLY_STAGING_APP_NAME }} --remote-only
