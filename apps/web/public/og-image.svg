@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- 1200×630 is the OG-image canonical -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B4D7A"/>
+      <stop offset="1" stop-color="#0F1B2D"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C8C9E" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#2C8C9E" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <ellipse cx="900" cy="0" rx="500" ry="350" fill="url(#accent)"/>
+
+  <!-- Brand -->
+  <g transform="translate(80, 100)">
+    <rect width="80" height="80" rx="18" fill="#1B4D7A"/>
+    <path d="M40 18 L40 58 Q40 70 30 70 Q20 70 18 62"
+          fill="none" stroke="#F8F4EE" stroke-width="6" stroke-linecap="round"/>
+    <line x1="28" y1="22" x2="52" y2="22" stroke="#F8F4EE" stroke-width="6" stroke-linecap="round"/>
+    <text x="100" y="55" font-family="Inter, sans-serif" font-size="40" font-weight="700" fill="#F8F4EE">Jobetes</text>
+  </g>
+
+  <!-- Headline (DE) -->
+  <text x="80" y="280" font-family="Inter, sans-serif" font-size="64" font-weight="700" fill="#F8F4EE">
+    <tspan x="80" dy="0">Vertrauenswürdige</tspan>
+    <tspan x="80" dy="78">Gastroenterologie</tspan>
+    <tspan x="80" dy="78" fill="#2C8C9E">aus Deutschland.</tspan>
+  </text>
+
+  <!-- Sub-headline (AR) -->
+  <text x="80" y="540" font-family="IBM Plex Sans Arabic, Arial, sans-serif" font-size="36" font-weight="600" fill="#F8F4EE" opacity="0.85">
+    رعاية متخصصة باللغة العربية للمرضى في الأردن
+  </text>
+
+  <!-- Trust line -->
+  <text x="80" y="595" font-family="Inter, sans-serif" font-size="22" font-weight="500" fill="#F8F4EE" opacity="0.7">
+    Dr. Mahmoud Al-Shdaifat · St. Anna Hospital Herne · 20+ years experience
+  </text>
+
+  <!-- Olive trust dot -->
+  <circle cx="1080" cy="420" r="56" fill="#6B7F4E" opacity="0.9"/>
+  <text x="1080" y="430" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#F8F4EE" text-anchor="middle">FREE</text>
+  <text x="1080" y="455" font-family="Inter, sans-serif" font-size="13" fill="#F8F4EE" text-anchor="middle">first chat</text>
+</svg>

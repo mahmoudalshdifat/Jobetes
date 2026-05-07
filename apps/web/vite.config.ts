@@ -54,7 +54,10 @@ export default defineConfig({
         ],
       },
       manifest: {
-        id: '/Jobetes/',
+        // Stable PWA identity — '/' so the same installed app works on both
+        // the GH-Pages mirror and the production custom domain `jobetes.diggai.de`
+        // without re-prompting install.
+        id: '/',
         name: 'Jobetes',
         short_name: 'Jobetes',
         description:
