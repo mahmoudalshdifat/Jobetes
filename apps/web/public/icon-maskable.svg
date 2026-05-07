@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable: full-bleed background, content within safe-zone (inner 80%) -->
+  <rect width="512" height="512" fill="#1B4D7A"/>
+  <!-- Safe zone is 410x410 centered → padding 51 -->
+  <g transform="translate(51,51) scale(0.80078)">
+    <path d="M 256 96
+             L 256 320
+             Q 256 392 184 392
+             Q 128 392 112 344"
+          fill="none" stroke="#F8F4EE" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="200" y1="120" x2="312" y2="120" stroke="#F8F4EE" stroke-width="44" stroke-linecap="round"/>
+    <circle cx="384" cy="128" r="32" fill="#6B7F4E"/>
+  </g>
+</svg>

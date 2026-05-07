@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Doctor portal: deeper teal background to differentiate from patient web -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#0F1B2D"/>
+  <rect x="48" y="48" width="416" height="416" rx="64" ry="64" fill="#2C8C9E" opacity="0.12"/>
+  <!-- Stethoscope-styled "D" -->
+  <path d="M 160 96
+           L 160 320
+           Q 160 416 256 416
+           Q 352 416 352 320
+           L 352 96"
+        fill="none" stroke="#F8F4EE" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="416" r="36" fill="none" stroke="#F8F4EE" stroke-width="20"/>
+  <circle cx="384" cy="120" r="28" fill="#6B7F4E"/>
+</svg>

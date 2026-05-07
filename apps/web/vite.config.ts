@@ -24,7 +24,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'robots.txt'],
+      includeAssets: [
+        'favicon.ico',
+        'robots.txt',
+        'icon.svg',
+        'icon-maskable.svg',
+        'apple-touch-icon.svg',
+      ],
       workbox: {
         // Cache app-shell assets aggressively
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
@@ -62,7 +68,23 @@ export default defineConfig({
         start_url: process.env.VITE_BASE ?? '/',
         scope: process.env.VITE_BASE ?? '/',
         icons: [
-          // Placeholders — replace with real artwork before public launch.
+          {
+            src: 'icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-maskable.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'maskable',
+          },
+          {
+            src: 'apple-touch-icon.svg',
+            sizes: '180x180',
+            type: 'image/svg+xml',
+          },
           { src: 'favicon.ico', sizes: '64x64', type: 'image/x-icon' },
         ],
       },

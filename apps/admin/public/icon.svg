@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Admin: copper accent on dark — "internal-controls" feel -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#0F1B2D"/>
+  <!-- Gear-style 8-tooth ring -->
+  <g transform="translate(256 256)">
+    <g fill="#B8654A">
+      <rect x="-24" y="-208" width="48" height="64" rx="8"/>
+      <rect x="-24" y="144" width="48" height="64" rx="8"/>
+      <rect x="-208" y="-24" width="64" height="48" rx="8"/>
+      <rect x="144" y="-24" width="64" height="48" rx="8"/>
+      <g transform="rotate(45)">
+        <rect x="-24" y="-208" width="48" height="64" rx="8"/>
+        <rect x="-24" y="144" width="48" height="64" rx="8"/>
+        <rect x="-208" y="-24" width="64" height="48" rx="8"/>
+        <rect x="144" y="-24" width="64" height="48" rx="8"/>
+      </g>
+    </g>
+    <circle r="120" fill="#F8F4EE"/>
+    <circle r="48" fill="#0F1B2D"/>
+  </g>
+</svg>
