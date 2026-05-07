@@ -20,3 +20,4 @@ export { applyTheme, getTheme, setTheme, listenSystemTheme } from './theme.js';
 export { ToastProvider, useToast, type ToastType, type ToastItem } from './toast.js';
 export { Skeleton, type SkeletonProps } from './Skeleton.js';
 export { CookieBanner, getCookieConsent, setCookieConsent } from './CookieBanner.js';
+export { Dialog, type DialogProps } from './Dialog.js';
