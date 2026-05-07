@@ -12,11 +12,21 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
  * can call either backend with the same payload.
  */
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://jobetes.diggai.de',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 const REQUIRED = [
   'firstName', 'lastName', 'dateOfBirth', 'gender', 'preferredLocale',
@@ -46,6 +56,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SB = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST')
     return new Response('Method not allowed', { status: 405, headers: CORS });
@@ -56,14 +67,14 @@ Deno.serve(async (req) => {
   } catch {
     return new Response(JSON.stringify({ error: 'invalid_json' }), {
       status: 400,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
   const err = validate(body);
   if (err)
     return new Response(JSON.stringify({ error: 'invalid_intake', detail: err }), {
       status: 400,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
 
   const sb = SB;
@@ -87,7 +98,7 @@ Deno.serve(async (req) => {
   if (pErr)
     return new Response(JSON.stringify({ error: 'db_patient', detail: pErr.message }), {
       status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
 
   const { data: consent, error: cErr } = await sb
@@ -108,7 +119,7 @@ Deno.serve(async (req) => {
   if (cErr)
     return new Response(JSON.stringify({ error: 'db_consent', detail: cErr.message }), {
       status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
 
   const { data: intake, error: iErr } = await sb
@@ -128,7 +139,7 @@ Deno.serve(async (req) => {
   if (iErr)
     return new Response(JSON.stringify({ error: 'db_intake', detail: iErr.message }), {
       status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
 
   await sb.from('AuditLog').insert({
@@ -158,6 +169,6 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({ id: intake.id, receivedAt: intake.createdAt }), {
     status: 201,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   });
 });

@@ -18,11 +18,21 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
  * token itself is valid, the identity is just not authorised).
  */
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://jobetes.diggai.de',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 const ALLOWED_EMAILS: Set<string> = new Set(
   (Deno.env.get('DOCTOR_EMAILS') ?? '')
@@ -37,6 +47,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SB = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'GET')
     return new Response('Method not allowed', { status: 405, headers: CORS });
@@ -47,7 +58,7 @@ Deno.serve(async (req) => {
   if (!token) {
     return new Response(JSON.stringify({ error: 'unauthorized' }), {
       status: 401,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 
@@ -63,7 +74,7 @@ Deno.serve(async (req) => {
   if (userErr || !userData.user) {
     return new Response(JSON.stringify({ error: 'unauthorized' }), {
       status: 401,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 
@@ -71,7 +82,7 @@ Deno.serve(async (req) => {
   if (ALLOWED_EMAILS.size > 0 && !ALLOWED_EMAILS.has(email)) {
     return new Response(JSON.stringify({ error: 'forbidden' }), {
       status: 403,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
     }
@@ -84,7 +95,7 @@ Deno.serve(async (req) => {
     sb.from('Appointment').select('id', { count: 'exact', head: true }),
     sb
       .from('Intake')
-      .select('id, createdAt, severity, preferredLocale')
+      .select('id, createdAt, severity, Patient(preferredLocale)')
       .order('createdAt', { ascending: false })
       .limit(10),
   ]);
@@ -100,12 +111,12 @@ Deno.serve(async (req) => {
         id: r.id as string,
         createdAt: r.createdAt as string,
         severity: r.severity as number,
-        locale: r.preferredLocale as string,
+        locale: (r as any).Patient?.preferredLocale as string ?? '—',
       })),
     }),
     {
       headers: {
-        ...CORS,
+        ...corsHeaders(req),
         'Content-Type': 'application/json',
         'Cache-Control': 'private, no-store',
       },

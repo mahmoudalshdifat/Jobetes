@@ -64,9 +64,28 @@ export default defineConfig({
         display: 'standalone',
         lang: 'ar',
         dir: 'rtl',
+        categories: ['medical', 'health', 'lifestyle'],
         // GH Pages serves under /Jobetes/ — start_url has to match
         start_url: process.env.VITE_BASE ?? '/',
         scope: process.env.VITE_BASE ?? '/',
+        // Long-press the app icon on Android → quick patient actions.
+        // Saves taps for the most common journeys.
+        shortcuts: [
+          {
+            name: 'بدء التسجيل',
+            short_name: 'تسجيل',
+            description: 'Submit a new patient intake',
+            url: (process.env.VITE_BASE ?? '/') + '?route=intake',
+            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+          },
+          {
+            name: 'حجز موعد',
+            short_name: 'موعد',
+            description: 'Request an appointment',
+            url: (process.env.VITE_BASE ?? '/') + '?route=appointment',
+            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+          },
+        ],
         icons: [
           {
             src: 'icon.svg',
@@ -102,6 +121,15 @@ export default defineConfig({
           org: SENTRY_ORG,
           project: SENTRY_PROJECT,
           telemetry: false,
+          // Tag this build with the deploying commit SHA so Sentry's UI
+          // can filter "errors since v0.2.5 / 707a96e" cleanly. CI sets
+          // GITHUB_SHA; locally we fall back to a timestamp.
+          release: {
+            name:
+              process.env.SENTRY_RELEASE ??
+              process.env.GITHUB_SHA ??
+              `local-${Date.now()}`,
+          },
           sourcemaps: {
             assets: ['./dist/**/*.{js,css}'],
             ignore: ['node_modules'],

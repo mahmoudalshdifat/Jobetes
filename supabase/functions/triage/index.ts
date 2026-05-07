@@ -9,11 +9,21 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
  * Any provider failure falls back to mock so the API contract never breaks.
  */
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://jobetes.diggai.de',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 const DISCLAIMERS: Record<string, string> = {
   ar: 'هذه معلومات وليست تشخيصًا طبيًا. للحالات الطارئة اتصل بـ 911 (الأردن) أو 112 (ألمانيا).',
@@ -55,7 +65,7 @@ function mockResult(input: any) {
 async function geminiResult(input: any, apiKey: string) {
   const start = Date.now();
   const locale = input.preferredLocale ?? 'en';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
   const systemInstruction = `You are a triage assistant. You are NOT a doctor and DO NOT diagnose. Suggest urgency category and topics to discuss. Red flags (severe pain, blood, weight loss, jaundice, vomiting blood, syncope) → urgency=emergency. Be concise, kind, culturally respectful. Respond in ${locale}.`;
   const prompt = [
     'Patient summary:',
@@ -73,7 +83,10 @@ async function geminiResult(input: any, apiKey: string) {
     .join('\n');
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemInstruction }] },
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -107,6 +120,7 @@ async function geminiResult(input: any, apiKey: string) {
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST')
     return new Response('Method not allowed', { status: 405, headers: CORS });
@@ -117,27 +131,27 @@ Deno.serve(async (req) => {
   } catch {
     return new Response(JSON.stringify({ error: 'invalid_json' }), {
       status: 400,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
   const err = validate(body);
   if (err)
     return new Response(JSON.stringify({ error: 'invalid_triage_input', detail: err }), {
       status: 400,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
 
   const key = Deno.env.get('GEMINI_API_KEY') ?? '';
   try {
     const result = key ? await geminiResult(body, key) : mockResult(body);
     return new Response(JSON.stringify(result), {
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch {
     const fallback = mockResult(body);
     fallback.modelMeta.model = 'fallback-after-error';
     return new Response(JSON.stringify(fallback), {
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });
