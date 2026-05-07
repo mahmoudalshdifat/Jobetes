@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js';
-import { Button, Card, EmergencyBanner, cn, ToastProvider } from '@jobetes/ui';
+import { Button, Card, EmergencyBanner, Input, cn, ToastProvider } from '@jobetes/ui';
 import { PUBLIC_FUNCTIONS as FUNCTIONS, pingAll, type ServiceStatus } from './service-status.js';
 
 /**
@@ -152,10 +152,10 @@ function AdminApp(): JSX.Element {
             >
               <label className="flex-1">
                 <span className="text-sm font-medium">E-Mail</span>
-                <input
+                <Input
                   type="email"
                   required
-                  className="mt-1 h-12 w-full rounded-2xl border border-ink-strong/15 bg-surface-white px-4 transition-colors hover:border-ink-strong/25 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                  className="mt-1"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
