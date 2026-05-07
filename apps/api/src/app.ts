@@ -102,7 +102,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(async (v1) => {
     await registerDoctorRoutes(v1);
     await registerIntakeRoutes(v1, intakeRepo, cfg.NOTIFY_WEBHOOK_URL);
-    await registerAppointmentRoutes(v1, intakeRepo, cfg.NOTIFY_WEBHOOK_URL);
+    await registerAppointmentRoutes(v1, cfg.NOTIFY_WEBHOOK_URL);
     await registerMeRoutes(v1, intakeRepo);
     await registerAdminRoutes(v1, intakeRepo);
     await registerTriageRoutes(v1, cfg);

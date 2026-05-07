@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { AppointmentRequestSchema, AppointmentStatusSchema } from '@jobetes/shared-schemas';
@@ -6,31 +5,9 @@ import { requireAuth } from '../auth.js';
 import type { IntakeRepo } from '../persistence/index.js';
 
 /**
- * Phase-0 appointment requests live in process memory. The doctor receives
- * a notification via the operator bot (out of band) and confirms manually.
- * Phase 1 will swap this for Postgres + Google Calendar + email.
+ * Appointment requests are persisted through the active repository adapter.
+ * Phase 0 still uses an in-memory store; Phase 1 switches to Postgres.
  */
-type AppointmentRecord = {
-  id: string;
-  receivedAt: string;
-  status: z.infer<typeof AppointmentStatusSchema>;
-  patientName: string;
-  phone: string;
-  preferredLocale: string;
-  reason: string;
-  preferredWindow: string;
-  preferredDates: string[];
-  notes?: string;
-  scheduledAt?: string;
-};
-
-const requests = new Map<string, AppointmentRecord>();
-
-export function findAppointmentsByPhone(phone: string): AppointmentRecord[] {
-  return Array.from(requests.values())
-    .filter((r) => r.phone === phone)
-    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
-}
 
 /**
  * Fire-and-forget notification to the operator webhook (operator-bot or an
@@ -77,27 +54,14 @@ export async function registerAppointmentRoutes(
         issues: parsed.error.issues,
       });
     }
-    const id = randomUUID();
-    const record: AppointmentRecord = {
-      id,
-      receivedAt: new Date().toISOString(),
-      status: 'requested',
-      patientName: parsed.data.patientName,
-      phone: parsed.data.phone,
-      preferredLocale: parsed.data.preferredLocale,
-      reason: parsed.data.reason,
-      preferredWindow: parsed.data.preferredWindow,
-      preferredDates: parsed.data.preferredDates,
-      notes: parsed.data.notes,
-    };
-    requests.set(id, record);
-    request.log.info({ appointmentId: id }, 'appointment requested');
+    const record = await repo.createAppointment(parsed.data);
+    request.log.info({ appointmentId: record.id, persistence: repo.kind }, 'appointment requested');
 
     void notifyWebhook(
       notifyWebhookUrl,
       'appointment.requested',
       {
-        appointmentId: id,
+        appointmentId: record.id,
         patientName: parsed.data.patientName,
         preferredWindow: parsed.data.preferredWindow,
         preferredLocale: parsed.data.preferredLocale,
@@ -114,7 +78,7 @@ export async function registerAppointmentRoutes(
 
   app.get('/appointments/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const record = requests.get(id);
+    const record = await repo.findAppointmentById(id);
     if (!record) return reply.status(404).send({ error: 'not_found' });
     return {
       id: record.id,
@@ -134,12 +98,13 @@ export async function registerAppointmentRoutes(
   // Admin/doctor: list all appointments
   app.get('/admin/appointments', async (request, reply) => {
     const user = await requireAuth(request);
-    if (!(await repo.isStaff(user.supabaseUserId, 'doctor'))) {
+    const doctorIds = new Set(
+      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    );
+    if (doctorIds.size > 0 && !doctorIds.has(user.supabaseUserId)) {
       return reply.status(404).send({ error: 'not_found' });
     }
-    const all = Array.from(requests.values()).sort(
-      (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime(),
-    );
+    const all = await repo.findAllAppointments();
     return {
       total: all.length,
       appointments: all.map((r) => ({
@@ -158,30 +123,31 @@ export async function registerAppointmentRoutes(
   // Admin/doctor: update appointment status
   app.patch('/admin/appointments/:id', async (request, reply) => {
     const user = await requireAuth(request);
-    if (!(await repo.isStaff(user.supabaseUserId, 'doctor'))) {
+    const doctorIds = new Set(
+      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    );
+    if (doctorIds.size > 0 && !doctorIds.has(user.supabaseUserId)) {
       return reply.status(404).send({ error: 'not_found' });
     }
     const { id } = request.params as { id: string };
-    const record = requests.get(id);
-    if (!record) return reply.status(404).send({ error: 'not_found' });
 
     const parsed = UpdateAppointmentSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'invalid_update', issues: parsed.error.issues });
     }
 
-    if (parsed.data.status) record.status = parsed.data.status;
-    if (parsed.data.scheduledAt) record.scheduledAt = parsed.data.scheduledAt;
+    const updated = await repo.updateAppointment(id, parsed.data);
+    if (!updated) return reply.status(404).send({ error: 'not_found' });
 
-    request.log.info({ appointmentId: id, status: record.status }, 'appointment updated');
+    request.log.info({ appointmentId: id, status: updated.status, persistence: repo.kind }, 'appointment updated');
 
     void notifyWebhook(
       notifyWebhookUrl,
       'appointment.updated',
-      { appointmentId: id, status: record.status, scheduledAt: record.scheduledAt },
+      { appointmentId: id, status: updated.status, scheduledAt: updated.scheduledAt },
       request.log,
     );
 
-    return { id: record.id, status: record.status, scheduledAt: record.scheduledAt };
+    return updated;
   });
 }

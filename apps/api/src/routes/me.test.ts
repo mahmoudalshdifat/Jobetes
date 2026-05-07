@@ -63,6 +63,11 @@ describe('GET /me + GET /me/intakes (with synthesized auth)', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  it('GET /me/appointments 404 when no claimed patient exists', async () => {
+    const res = await app.inject({ method: 'GET', url: '/me/appointments' });
+    expect(res.statusCode).toBe(404);
+  });
+
   it('GET /me/export returns structured data (Phase-0 stub)', async () => {
     const res = await app.inject({ method: 'GET', url: '/me/export' });
     expect(res.statusCode).toBe(200);

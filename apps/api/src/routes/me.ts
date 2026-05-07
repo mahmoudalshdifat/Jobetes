@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { PhoneSchema } from '@jobetes/shared-schemas';
 import { requireAuth } from '../auth.js';
 import type { IntakeRepo } from '../persistence/index.js';
-import { findAppointmentsByPhone } from './appointment.js';
 
 const ClaimSchema = z.object({ phone: PhoneSchema });
 
@@ -68,7 +67,7 @@ export async function registerMeRoutes(
     if (!phone) {
       return reply.status(404).send({ error: 'no_patient_found', detail: 'Claim your account by phone first' });
     }
-    const appointments = findAppointmentsByPhone(phone);
+    const appointments = await repo.findAppointmentsByPhone(phone);
     return {
       total: appointments.length,
       appointments: appointments.map((a) => ({

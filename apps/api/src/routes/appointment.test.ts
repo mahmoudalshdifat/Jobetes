@@ -44,6 +44,8 @@ describe('Appointment routes', () => {
     const fetched = await app.inject({ method: 'GET', url: `/appointments/${id}` });
     expect(fetched.statusCode).toBe(200);
     expect(fetched.json().id).toBe(id);
+    expect(fetched.json().reason).toBe(valid.reason);
+    expect(fetched.json().preferredDates).toEqual(valid.preferredDates);
   });
 
   it('GET /appointments/:id 404 unknown', async () => {
