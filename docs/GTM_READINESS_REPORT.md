@@ -15,7 +15,7 @@
 | **Backend API** | 🟢 Structured, secure, DSR-compliant | Resolved |
 | **Compliance/Legal** | 🟡 Excellent documentation framework | 11 critical legal gaps |
 | **Infrastructure/CI-CD** | 🟡 GitHub Actions + Fly.io + Pages | 3 operational gaps |
-| **Testing** | 🟢 204 tests, E2E suite | All passing |
+| **Testing** | 🟢 229 tests, E2E suite | All passing |
 
 **Overall Assessment:** This is a well-architected Phase-0 prototype with unusually strong compliance documentation for a pre-launch product. However, it is still a **prototype** — patient data lives in memory (lost on restart), legal documents are placeholders, and several GDPR/Jordan PDPL requirements are unimplemented.
 
@@ -228,13 +228,13 @@
 
 | Layer | Count |
 |-------|-------|
-| API unit tests | 56 |
+| API unit tests | 62 |
 | Web app unit tests | 51 |
 | Admin unit tests | 13 |
 | Doctor unit tests | 15 |
-| UI package tests | 69 |
+| UI package tests | 82 |
 | E2E tests | 6 |
-| **Total** | **210** |
+| **Total** | **229** |
 
 ---
 
