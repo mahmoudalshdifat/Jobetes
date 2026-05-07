@@ -62,4 +62,33 @@ describe('GET /me + GET /me/intakes (with synthesized auth)', () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it('GET /me/export returns structured data (Phase-0 stub)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/me/export' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('patient');
+    expect(body).toHaveProperty('intakes');
+    expect(body).toHaveProperty('appointments');
+    expect(body).toHaveProperty('generatedAt');
+    expect(body).toHaveProperty('retentionPolicy');
+    expect(body.intakes).toEqual([]);
+    expect(body.appointments).toEqual([]);
+  });
+
+  it('PATCH /me returns 404 in Phase-0 (no patient registry)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/me',
+      payload: { firstName: 'Updated' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toHaveProperty('error');
+  });
+
+  it('DELETE /me returns 404 in Phase-0 (no patient registry)', async () => {
+    const res = await app.inject({ method: 'DELETE', url: '/me' });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toHaveProperty('error');
+  });
 });

@@ -79,6 +79,8 @@ model Patient {
 model Intake {
   id                    String    @id @default(uuid()) @db.Uuid
   createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime? // soft delete for GDPR recovery
 
   patient               Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId             String    @db.Uuid
@@ -97,7 +99,7 @@ model Intake {
   // Most recent triage attached to this intake (one-to-one)
   triage                Triage?
 
-  consent               Consent   @relation(fields: [consentId], references: [id])
+  consent               Consent   @relation(fields: [consentId], references: [id], onDelete: Cascade)
   consentId             String    @unique @db.Uuid
 
   @@index([patientId, createdAt])
@@ -106,6 +108,9 @@ model Intake {
 
 model Consent {
   id                      String    @id @default(uuid()) @db.Uuid
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
   acceptedAt              DateTime  @default(now())
   privacyPolicyVersion    String
   presentedLocale         Locale
@@ -123,6 +128,7 @@ model Consent {
 model Triage {
   id                       String         @id @default(uuid()) @db.Uuid
   createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
 
   intake                   Intake         @relation(fields: [intakeId], references: [id], onDelete: Cascade)
   intakeId                 String         @unique @db.Uuid
@@ -142,6 +148,7 @@ model Triage {
   tokensOut                Int?
 
   @@index([intakeId])
+  @@index([urgency, createdAt])
 }
 
 model Appointment {
@@ -164,6 +171,7 @@ model Appointment {
 model Message {
   id          String    @id @default(uuid()) @db.Uuid
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId   String    @db.Uuid
@@ -181,6 +189,7 @@ model Message {
 model AuditLog {
   id          String    @id @default(uuid()) @db.Uuid
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   actorRole   String    // "patient" | "doctor" | "system"
   actorId     String?   @db.Uuid

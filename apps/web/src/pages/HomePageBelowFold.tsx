@@ -47,15 +47,10 @@ export function HomePageBelowFold({
         </div>
       </section>
 
-      <Testimonials
-        title={t('testimonials.title')}
-        disclaimer={t('testimonials.disclaimer')}
-        items={[
-          { body: t('testimonials.t1.body'), author: t('testimonials.t1.author') },
-          { body: t('testimonials.t2.body'), author: t('testimonials.t2.author') },
-          { body: t('testimonials.t3.body'), author: t('testimonials.t3.author') },
-        ]}
-      />
+      <section className="container-reading py-14">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink-strong">{t('testimonials.title')}</h2>
+        <p className="mt-4 text-ink-soft">{t('testimonials.comingSoon')}</p>
+      </section>
 
       <Faq
         title={t('faq.title')}

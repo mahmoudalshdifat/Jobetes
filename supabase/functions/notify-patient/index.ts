@@ -17,11 +17,21 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
  *   - Email body is locale-specific (AR/DE/EN).
  */
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://jobetes.diggai.de',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 const SUBJECTS: Record<string, string> = {
   ar: 'تأكيد استلام طلبك — جوبيتس',
@@ -38,36 +48,36 @@ const BODIES: Record<string, (name: string) => string> = {
     `Hello ${name},\n\nThank you for submitting your request. Dr. Mahmoud Al-Shdaifat will be in touch within 48 hours.\n\nReminder: This is not a medical diagnosis. In emergencies call 911 (Jordan) or 112 (Germany).\n\nBest regards,\nThe Jobetes Team`,
 };
 
-function json(body: unknown, status = 200): Response {
+function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: CORS });
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(req) });
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders(req) });
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   const fromEmail = Deno.env.get('FROM_EMAIL');
 
   if (!resendApiKey || !fromEmail) {
     console.warn('[notify-patient] RESEND_API_KEY or FROM_EMAIL not configured — skipping email');
-    return json({ skipped: true, reason: 'email_not_configured' });
+    return json(req, { skipped: true, reason: 'email_not_configured' });
   }
 
   let body: { firstName?: string; email?: string; preferredLocale?: string };
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'invalid_json' }, 400);
+    return json(req, { error: 'invalid_json' }, 400);
   }
 
   const { firstName = 'there', email, preferredLocale = 'en' } = body;
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     // No email provided — silently skip (phone-only intake is valid).
-    return json({ skipped: true, reason: 'no_valid_email' });
+    return json(req, { skipped: true, reason: 'no_valid_email' });
   }
 
   const locale = ['ar', 'de', 'en'].includes(preferredLocale) ? preferredLocale : 'en';
@@ -91,7 +101,7 @@ Deno.serve(async (req) => {
   if (!resendRes.ok) {
     const errBody = await resendRes.text();
     console.error(`[notify-patient] Resend API error ${resendRes.status}: ${errBody}`);
-    return json({ error: 'email_send_failed' }, 502);
+    return json(req, { error: 'email_send_failed' }, 502);
   }
 
   const result = await resendRes.json();

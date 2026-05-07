@@ -8,6 +8,8 @@ const {
   mockOnAuthStateChange,
   mockSignInWithOtp,
   mockFetchAdminSummary,
+  mockFetchAppointments,
+  mockUpdateAppointment,
 } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockOnAuthStateChange: vi.fn().mockReturnValue({
@@ -15,6 +17,8 @@ const {
   }),
   mockSignInWithOtp: vi.fn(),
   mockFetchAdminSummary: vi.fn(),
+  mockFetchAppointments: vi.fn().mockResolvedValue({ total: 0, appointments: [] }),
+  mockUpdateAppointment: vi.fn(),
 }));
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -30,6 +34,8 @@ vi.mock('@supabase/supabase-js', () => ({
 
 vi.mock('./api.js', () => ({
   fetchAdminSummary: mockFetchAdminSummary,
+  fetchAppointments: mockFetchAppointments,
+  updateAppointment: mockUpdateAppointment,
 }));
 
 describe('Doctor portal (mock-mode)', () => {

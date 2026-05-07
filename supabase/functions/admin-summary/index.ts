@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     sb.from('Appointment').select('id', { count: 'exact', head: true }),
     sb
       .from('Intake')
-      .select('id, createdAt, severity, Patient(preferredLocale)')
+      .select('id, createdAt, severity, payload, patientId, Patient(firstName, lastName, phone, email, preferredLocale)')
       .order('createdAt', { ascending: false })
       .limit(10),
   ]);
@@ -112,6 +112,11 @@ Deno.serve(async (req) => {
         createdAt: r.createdAt as string,
         severity: r.severity as number,
         locale: (r as any).Patient?.preferredLocale as string ?? '—',
+        patientId: r.patientId as string,
+        payload: r.payload as Record<string, unknown>,
+        patientName: `${(r as any).Patient?.firstName ?? ''} ${(r as any).Patient?.lastName ?? ''}`.trim(),
+        patientPhone: (r as any).Patient?.phone as string ?? '',
+        patientEmail: (r as any).Patient?.email as string ?? '',
       })),
     }),
     {

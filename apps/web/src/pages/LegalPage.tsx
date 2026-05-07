@@ -15,9 +15,7 @@ export function LegalPage(): JSX.Element {
           <p>{t('legal.privacy.basis')}</p>
           <p>{t('legal.privacy.retention')}</p>
           <p>{t('legal.privacy.rights')}</p>
-          <p className="text-xs text-ink-soft/70 border-t border-ink-strong/10 pt-3">
-            {t('legal.placeholder.notice')}
-          </p>
+          <p>{t('legal.privacy.cookies')}</p>
         </div>
       </Card>
 
@@ -28,9 +26,18 @@ export function LegalPage(): JSX.Element {
           <p>{t('legal.terms.nodiagnosis')}</p>
           <p>{t('legal.terms.liability')}</p>
           <p>{t('legal.terms.governing')}</p>
-          <p className="text-xs text-ink-soft/70 border-t border-ink-strong/10 pt-3">
-            {t('legal.placeholder.notice')}
-          </p>
+          <p>{t('legal.terms.age')}</p>
+          <p>{t('legal.terms.consent')}</p>
+        </div>
+      </Card>
+
+      {/* Cookie Policy */}
+      <Card title={t('nav.cookies') ?? 'Cookie Policy'}>
+        <div className="space-y-3 text-sm text-ink-soft">
+          <p>{t('legal.cookies.essential')}</p>
+          <p>{t('legal.cookies.analytics')}</p>
+          <p>{t('legal.cookies.thirdParty')}</p>
+          <p>{t('legal.cookies.withdrawal')}</p>
         </div>
       </Card>
 

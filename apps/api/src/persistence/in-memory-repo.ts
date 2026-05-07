@@ -10,6 +10,7 @@ import type { IntakeRepo, IntakeRecord } from './types.js';
 export class InMemoryIntakeRepo implements IntakeRepo {
   readonly kind = 'memory' as const;
   private readonly store = new Map<string, IntakeRecord>();
+  private readonly userToPhone = new Map<string, string>();
 
   async create(_data: PatientIntake): Promise<IntakeRecord> {
     const id = randomUUID();
@@ -30,7 +31,12 @@ export class InMemoryIntakeRepo implements IntakeRepo {
   }
 
   async claimByPhone(_supabaseUserId: string, _phone: string): Promise<string | null> {
+    // Phase 0: no patient registry — claim always fails
     return null;
+  }
+
+  async getPhoneByUser(supabaseUserId: string): Promise<string | null> {
+    return this.userToPhone.get(supabaseUserId) ?? null;
   }
 
   async count(): Promise<number> {
@@ -50,5 +56,27 @@ export class InMemoryIntakeRepo implements IntakeRepo {
     const offset = options?.offset ?? 0;
     const limit = options?.limit ?? all.length;
     return all.slice(offset, offset + limit);
+  }
+
+  async exportPatientData(supabaseUserId: string): Promise<Record<string, unknown>> {
+    const phone = this.userToPhone.get(supabaseUserId) ?? null;
+    return {
+      patient: null,
+      intakes: [],
+      appointments: [],
+      consents: [],
+      generatedAt: new Date().toISOString(),
+      retentionPolicy: '24 months from last interaction, 10 years with explicit consent',
+      dataController: 'Jobetes Health GmbH, contact@jobetes.diggai.de',
+      ...(phone ? { linkedPhone: phone } : {}),
+    };
+  }
+
+  async deletePatient(_supabaseUserId: string): Promise<boolean> {
+    return false;
+  }
+
+  async updatePatient(_supabaseUserId: string, _data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<boolean> {
+    return false;
   }
 }

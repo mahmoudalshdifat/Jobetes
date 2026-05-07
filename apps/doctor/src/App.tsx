@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Button, Card, EmergencyBanner, cn, ToastProvider } from '@jobetes/ui';
 import { getSupabase } from './supabase.js';
-import { fetchAdminSummary, type AdminSummary } from './api.js';
+import { fetchAdminSummary, fetchAppointments, updateAppointment, type AdminSummary, type Appointment } from './api.js';
 
 type View = 'loading' | 'login' | 'sent' | 'dashboard' | 'unauthorized' | 'mock';
 
@@ -13,6 +13,9 @@ function DoctorApp(): JSX.Element {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<AdminSummary | null>(null);
+  const [selectedIntake, setSelectedIntake] = useState<AdminSummary['recentIntakes'][0] | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -45,6 +48,11 @@ function DoctorApp(): JSX.Element {
         if (msg.includes('403') || msg.includes('401')) setView('unauthorized');
         else setError(msg);
       });
+    setAppointmentsLoading(true);
+    fetchAppointments(session.access_token)
+      .then((res) => setAppointments(res.appointments))
+      .catch(() => setAppointments([]))
+      .finally(() => setAppointmentsLoading(false));
   }, [view, session]);
 
   return (
@@ -157,7 +165,7 @@ function DoctorApp(): JSX.Element {
               </Card>
             </div>
 
-            <Card title="Recent intakes" description="Last 10, newest first">
+            <Card title="Recent intakes" description="Last 10, newest first — click a row to view details">
               {summary && summary.recentIntakes.length > 0 ? (
                 <div className="overflow-hidden rounded-2xl border border-ink-strong/10">
                   <table className="w-full text-sm">
@@ -171,7 +179,14 @@ function DoctorApp(): JSX.Element {
                     </thead>
                     <tbody>
                       {summary.recentIntakes.map((r) => (
-                        <tr key={r.id} className="border-b border-ink-strong/5 transition-colors hover:bg-surface-warm/30">
+                        <tr
+                          key={r.id}
+                          onClick={() => setSelectedIntake(r)}
+                          className={cn(
+                            'border-b border-ink-strong/5 transition-colors cursor-pointer',
+                            selectedIntake?.id === r.id ? 'bg-brand-primary/5' : 'hover:bg-surface-warm/30'
+                          )}
+                        >
                           <td className="px-3 py-2 font-mono text-xs text-ink-soft">{r.id.slice(0, 8)}…</td>
                           <td className="px-3 py-2">
                             <span className={cn(
@@ -194,6 +209,160 @@ function DoctorApp(): JSX.Element {
                 </div>
               ) : (
                 <p className="text-ink-soft">{summary ? 'No intakes yet.' : 'Loading…'}</p>
+              )}
+            </Card>
+
+            {selectedIntake ? (
+              <Card
+                title={selectedIntake.patientName || 'Patient details'}
+                description={`${selectedIntake.patientPhone}${selectedIntake.patientEmail ? ' · ' + selectedIntake.patientEmail : ''}`}
+                footer={
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedIntake(null)}>
+                    Close details
+                  </Button>
+                }
+              >
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Symptoms</p>
+                    <p className="mt-1">
+                      {Array.isArray(selectedIntake.payload.primarySymptoms)
+                        ? selectedIntake.payload.primarySymptoms.join(', ')
+                        : '—'}
+                    </p>
+                  </div>
+                  {selectedIntake.payload.symptomsOtherText ? (
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Other symptoms</p>
+                      <p className="mt-1">{String(selectedIntake.payload.symptomsOtherText ?? '')}</p>
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Severity</p>
+                      <p className="mt-1 font-semibold">{selectedIntake.severity}/10</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Duration (days)</p>
+                      <p className="mt-1">{typeof selectedIntake.payload.symptomDurationDays === 'number' ? selectedIntake.payload.symptomDurationDays : '—'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Medications</p>
+                    <p className="mt-1">
+                      {Array.isArray(selectedIntake.payload.currentMedications) && selectedIntake.payload.currentMedications.length
+                        ? selectedIntake.payload.currentMedications.join(', ')
+                        : 'None reported'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Allergies</p>
+                    <p className="mt-1">
+                      {Array.isArray(selectedIntake.payload.knownAllergies) && selectedIntake.payload.knownAllergies.length
+                        ? selectedIntake.payload.knownAllergies.join(', ')
+                        : 'None reported'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Conditions</p>
+                    <p className="mt-1">
+                      {Array.isArray(selectedIntake.payload.knownConditions) && selectedIntake.payload.knownConditions.length
+                        ? selectedIntake.payload.knownConditions.join(', ')
+                        : 'None reported'}
+                    </p>
+                  </div>
+                  {selectedIntake.payload.ramadanContext ? (
+                    <p className="rounded-xl bg-brand-secondary/10 px-3 py-2 text-xs text-brand-secondary">
+                      Patient noted Ramadan context / fasting
+                    </p>
+                  ) : null}
+                </div>
+              </Card>
+            ) : null}
+
+            {/* Appointments management */}
+            <Card title="Appointments" description="Manage patient appointment requests">
+              {appointmentsLoading ? (
+                <p className="text-ink-soft">Loading…</p>
+              ) : appointments.length === 0 ? (
+                <p className="text-ink-soft">No appointments yet.</p>
+              ) : (
+                <div className="overflow-hidden rounded-2xl border border-ink-strong/10">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-surface-warm/60 text-xs text-ink-soft">
+                        <th className="px-3 py-2 text-start font-medium">Patient</th>
+                        <th className="px-3 py-2 text-start font-medium">Status</th>
+                        <th className="px-3 py-2 text-start font-medium">Received</th>
+                        <th className="px-3 py-2 text-end font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {appointments.map((a) => (
+                        <tr key={a.id} className="border-b border-ink-strong/5">
+                          <td className="px-3 py-2">
+                            <p className="font-medium">{a.patientName}</p>
+                            <p className="text-xs text-ink-soft">{a.phone}</p>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+                              a.status === 'confirmed' ? 'bg-accent-olive/15 text-accent-olive' :
+                              a.status === 'cancelled' ? 'bg-ink-strong/10 text-ink-soft' :
+                              'bg-brand-primary/10 text-brand-primary'
+                            )}>
+                              {a.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-xs text-ink-soft">
+                            {new Date(a.receivedAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-3 py-2 text-end">
+                            <div className="flex justify-end gap-1">
+                              {a.status === 'requested' ? (
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (!session) return;
+                                    try {
+                                      await updateAppointment(session.access_token, a.id, { status: 'confirmed' });
+                                      setAppointments((prev) =>
+                                        prev.map((ap) => (ap.id === a.id ? { ...ap, status: 'confirmed' } : ap))
+                                      );
+                                    } catch (err: unknown) {
+                                      setError(err instanceof Error ? err.message : 'Update failed');
+                                    }
+                                  }}
+                                >
+                                  Confirm
+                                </Button>
+                              ) : null}
+                              {a.status !== 'cancelled' && a.status !== 'completed' ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    if (!session) return;
+                                    try {
+                                      await updateAppointment(session.access_token, a.id, { status: 'cancelled' });
+                                      setAppointments((prev) =>
+                                        prev.map((ap) => (ap.id === a.id ? { ...ap, status: 'cancelled' } : ap))
+                                      );
+                                    } catch (err: unknown) {
+                                      setError(err instanceof Error ? err.message : 'Update failed');
+                                    }
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </Card>
 

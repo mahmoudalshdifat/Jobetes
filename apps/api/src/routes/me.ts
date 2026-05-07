@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { PhoneSchema } from '@jobetes/shared-schemas';
 import { requireAuth } from '../auth.js';
 import type { IntakeRepo } from '../persistence/index.js';
+import { findAppointmentsByPhone } from './appointment.js';
 
 const ClaimSchema = z.object({ phone: PhoneSchema });
 
@@ -59,5 +60,66 @@ export async function registerMeRoutes(
       return reply.status(404).send({ error: 'no_patient_found' });
     }
     return { patientId };
+  });
+
+  app.get('/me/appointments', async (request, reply) => {
+    const user = await requireAuth(request);
+    const phone = await repo.getPhoneByUser(user.supabaseUserId);
+    if (!phone) {
+      return reply.status(404).send({ error: 'no_patient_found', detail: 'Claim your account by phone first' });
+    }
+    const appointments = findAppointmentsByPhone(phone);
+    return {
+      total: appointments.length,
+      appointments: appointments.map((a) => ({
+        id: a.id,
+        receivedAt: a.receivedAt,
+        status: a.status,
+        patientName: a.patientName,
+        reason: a.reason,
+        preferredWindow: a.preferredWindow,
+        preferredDates: a.preferredDates,
+        scheduledAt: a.scheduledAt,
+      })),
+    };
+  });
+
+  // GDPR Art. 20 — Data portability
+  app.get('/me/export', async (request, reply) => {
+    const user = await requireAuth(request);
+    const data = await repo.exportPatientData(user.supabaseUserId);
+    if (!data) {
+      return reply.status(404).send({ error: 'no_patient_found', detail: 'No data linked to this account' });
+    }
+    return reply
+      .header('Content-Disposition', 'attachment; filename="jobetes-export.json"')
+      .send(data);
+  });
+
+  // GDPR Art. 16 — Right to rectification
+  const UpdateProfileSchema = z.object({
+    firstName: z.string().trim().min(1).max(120).optional(),
+    lastName: z.string().trim().min(1).max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().regex(/^\+\d{6,16}$/u, 'phone must be E.164').optional(),
+  });
+
+  app.patch('/me', async (request, reply) => {
+    const user = await requireAuth(request);
+    const parsed = UpdateProfileSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'invalid_profile', issues: parsed.error.issues });
+    }
+    const ok = await repo.updatePatient(user.supabaseUserId, parsed.data);
+    if (!ok) return reply.status(404).send({ error: 'no_patient_found' });
+    return { updated: true };
+  });
+
+  // GDPR Art. 17 — Right to erasure
+  app.delete('/me', async (request, reply) => {
+    const user = await requireAuth(request);
+    const ok = await repo.deletePatient(user.supabaseUserId);
+    if (!ok) return reply.status(404).send({ error: 'no_patient_found' });
+    return { deleted: true };
   });
 }

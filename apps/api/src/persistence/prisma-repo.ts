@@ -152,4 +152,102 @@ export class PrismaIntakeRepo implements IntakeRepo {
     });
     return rows.map((r) => ({ id: r.id, receivedAt: r.createdAt.toISOString() }));
   }
+
+  async getPhoneByUser(supabaseUserId: string): Promise<string | null> {
+    const patient = await this.client.patient.findFirst({
+      where: { supabaseUserId },
+      select: { phone: true },
+    });
+    return patient?.phone ?? null;
+  }
+
+  async exportPatientData(supabaseUserId: string): Promise<Record<string, unknown> | null> {
+    const patient = await this.client.patient.findFirst({
+      where: { supabaseUserId },
+      include: {
+        intakes: { include: { consent: true, triage: true }, orderBy: { createdAt: 'desc' } },
+        appointments: { orderBy: { createdAt: 'desc' } },
+        messages: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+    if (!patient) return null;
+    const { id, firstName, lastName, dateOfBirth, gender, preferredLocale, phone, email, createdAt, updatedAt } = patient;
+    await this.client.auditLog.create({
+      data: {
+        actorRole: 'patient',
+        actorId: patient.id,
+        event: 'patient.data_exported',
+        metadata: { scope: 'full_portability' },
+      },
+    });
+    return {
+      patient: { id, firstName, lastName, dateOfBirth: dateOfBirth.toISOString().slice(0, 10), gender, preferredLocale, phone, email, createdAt, updatedAt },
+      intakes: patient.intakes.map((i) => ({
+        id: i.id,
+        createdAt: i.createdAt,
+        severity: i.severity,
+        symptomDurationDays: i.symptomDurationDays,
+        ramadanContext: i.ramadanContext,
+        isFasting: i.isFasting,
+        prefersDoctorGender: i.prefersDoctorGender,
+        consent: i.consent,
+        triage: i.triage,
+      })),
+      appointments: patient.appointments.map((a) => ({
+        id: a.id,
+        status: a.status,
+        requestedAt: a.requestedAt,
+        scheduledAt: a.scheduledAt,
+        notes: a.notes,
+      })),
+      messages: patient.messages.map((m) => ({
+        id: m.id,
+        fromRole: m.fromRole,
+        body: m.body,
+        locale: m.locale,
+        createdAt: m.createdAt,
+      })),
+      exportedAt: new Date().toISOString(),
+    };
+  }
+
+  async deletePatient(supabaseUserId: string): Promise<boolean> {
+    const patient = await this.client.patient.findFirst({ where: { supabaseUserId } });
+    if (!patient) return false;
+    await this.client.$transaction([
+      this.client.message.deleteMany({ where: { patientId: patient.id } }),
+      this.client.triage.deleteMany({ where: { intake: { patientId: patient.id } } }),
+      this.client.intake.deleteMany({ where: { patientId: patient.id } }),
+      this.client.appointment.deleteMany({ where: { patientId: patient.id } }),
+      this.client.consent.deleteMany({ where: { intake: { patientId: patient.id } } }),
+      this.client.patient.delete({ where: { id: patient.id } }),
+      this.client.auditLog.create({
+        data: {
+          actorRole: 'patient',
+          actorId: patient.id,
+          event: 'patient.deleted',
+          metadata: { reason: 'gdpr_art_17' },
+        },
+      }),
+    ]);
+    return true;
+  }
+
+  async updatePatient(supabaseUserId: string, data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<boolean> {
+    const patient = await this.client.patient.findFirst({ where: { supabaseUserId } });
+    if (!patient) return false;
+    await this.client.patient.update({
+      where: { id: patient.id },
+      data,
+    });
+    await this.client.auditLog.create({
+      data: {
+        actorRole: 'patient',
+        actorId: patient.id,
+        event: 'patient.updated',
+        metadata: { fields: Object.keys(data) },
+      },
+    });
+    return true;
+  }
 }

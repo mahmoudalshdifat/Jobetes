@@ -35,4 +35,20 @@ export interface IntakeRepo {
   ping(): Promise<boolean>;
   /** Paginated list of all intakes (admin/doctor view). */
   findMany(options?: { limit?: number; offset?: number }): Promise<IntakeRecord[]>;
+  /**
+   * Return the phone number linked to a Supabase user, or null if not claimed.
+   */
+  getPhoneByUser(supabaseUserId: string): Promise<string | null>;
+  /**
+   * Export all patient data for data portability (GDPR Art. 20).
+   */
+  exportPatientData(supabaseUserId: string): Promise<Record<string, unknown> | null>;
+  /**
+   * Delete patient and all related data (GDPR Art. 17 right to erasure).
+   */
+  deletePatient(supabaseUserId: string): Promise<boolean>;
+  /**
+   * Update patient profile fields (GDPR Art. 16 right to rectification).
+   */
+  updatePatient(supabaseUserId: string, data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<boolean>;
 }

@@ -44,7 +44,9 @@ const PATHS: Record<Transport, Record<string, string>> = {
     triage: '/triage',
     me: '/me',
     myIntakes: '/me-intakes',
+    myAppointments: '/me-appointments',
     claim: '/me-claim',
+    export: '/me-export',
   },
   fastify: {
     health: '/health',
@@ -53,7 +55,9 @@ const PATHS: Record<Transport, Record<string, string>> = {
     triage: '/ai/triage',
     me: '/me',
     myIntakes: '/me/intakes',
+    myAppointments: '/me/appointments',
     claim: '/me/claim',
+    export: '/me/export',
   },
 };
 
@@ -140,5 +144,33 @@ export class JobetesApiClient {
 
   claimByPhone(phone: string): Promise<{ patientId: string }> {
     return this.request('POST', 'claim', { phone });
+  }
+
+  myAppointments(): Promise<{
+    total: number;
+    appointments: {
+      id: string;
+      receivedAt: string;
+      status: string;
+      patientName: string;
+      reason: string;
+      preferredWindow: string;
+      preferredDates: string[];
+      scheduledAt?: string;
+    }[];
+  }> {
+    return this.request('GET', 'myAppointments');
+  }
+
+  exportMyData(): Promise<Blob> {
+    return this.request('GET', 'export');
+  }
+
+  updateProfile(data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<{ updated: boolean }> {
+    return this.request('PATCH', 'me', data);
+  }
+
+  deleteMyAccount(): Promise<{ deleted: boolean }> {
+    return this.request('DELETE', 'me');
   }
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, Suspense, Component, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EmergencyBanner, LangToggle, Button, cn, ThemeToggle, getTheme, setTheme, listenSystemTheme, ToastProvider } from '@jobetes/ui';
+import { EmergencyBanner, LangToggle, Button, cn, ThemeToggle, getTheme, setTheme, listenSystemTheme, ToastProvider, CookieBanner } from '@jobetes/ui';
 import type { Locale } from '@jobetes/shared-schemas';
 import { AuthProvider, useAuth } from './auth/AuthContext.js';
 import { HomePage } from './pages/HomePage.js';
@@ -10,10 +10,11 @@ const IntakePage = React.lazy(() => import('./pages/IntakePage.js').then((m) => 
 const AppointmentPage = React.lazy(() => import('./pages/AppointmentPage.js').then((m) => ({ default: m.AppointmentPage })));
 const LegalPage = React.lazy(() => import('./pages/LegalPage.js').then((m) => ({ default: m.LegalPage })));
 const LoginPage = React.lazy(() => import('./pages/LoginPage.js').then((m) => ({ default: m.LoginPage })));
+const PatientPortalPage = React.lazy(() => import('./pages/PatientPortalPage.js').then((m) => ({ default: m.PatientPortalPage })));
 
-type Route = 'home' | 'doctor' | 'intake' | 'appointment' | 'legal' | 'login';
+type Route = 'home' | 'doctor' | 'intake' | 'appointment' | 'legal' | 'login' | 'me';
 
-const VALID_ROUTES: Route[] = ['home', 'doctor', 'intake', 'appointment', 'legal', 'login'];
+const VALID_ROUTES: Route[] = ['home', 'doctor', 'intake', 'appointment', 'legal', 'login', 'me'];
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#\/?/, '');
@@ -109,6 +110,10 @@ function AppShell(): JSX.Element {
     { key: 'legal', label: t('nav.legal') },
   ];
 
+  const authNavItems: { key: Route; label: string }[] = [
+    { key: 'me', label: t('nav.me') },
+  ];
+
   return (
     <div className="min-h-screen bg-surface-warm dark:bg-ink-strong">
       <a
@@ -148,9 +153,24 @@ function AppShell(): JSX.Element {
                 </button>
               ))}
               {status === 'authenticated' ? (
-                <button type="button" onClick={() => void signOut()} className="px-2 py-1">
-                  {t('auth.signOut')}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setRoute('me')}
+                    aria-current={route === 'me' ? 'page' : undefined}
+                    className={cn(
+                      'px-2 py-1 rounded-lg transition-colors',
+                      route === 'me'
+                        ? 'bg-brand-primary/10 text-brand-primary font-medium'
+                        : 'text-ink-soft hover:bg-ink-strong/5',
+                    )}
+                  >
+                    {t('nav.me')}
+                  </button>
+                  <button type="button" onClick={() => void signOut()} className="px-2 py-1">
+                    {t('auth.signOut')}
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
@@ -219,10 +239,43 @@ function AppShell(): JSX.Element {
                     {item.label}
                   </button>
                 ))}
+                {status === 'authenticated'
+                  ? authNavItems.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => { setRoute(item.key); closeMobile(); }}
+                        aria-current={route === item.key ? 'page' : undefined}
+                        className={cn(
+                          'px-3 py-2 rounded-lg text-start transition-colors',
+                          route === item.key
+                            ? 'bg-brand-primary/10 text-brand-primary font-medium'
+                            : 'text-ink-soft hover:bg-ink-strong/5 dark:text-ink-soft',
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))
+                  : null}
                 {status === 'authenticated' ? (
-                  <button type="button" onClick={() => { void signOut(); closeMobile(); }} className="px-3 py-2 text-start">
-                    {t('auth.signOut')}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setRoute('me'); closeMobile(); }}
+                      aria-current={route === 'me' ? 'page' : undefined}
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-start transition-colors md:hidden',
+                        route === 'me'
+                          ? 'bg-brand-primary/10 text-brand-primary font-medium'
+                          : 'text-ink-soft hover:bg-ink-strong/5 dark:text-ink-soft',
+                      )}
+                    >
+                      {t('nav.me')}
+                    </button>
+                    <button type="button" onClick={() => { void signOut(); closeMobile(); }} className="px-3 py-2 text-start">
+                      {t('auth.signOut')}
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
@@ -261,10 +314,16 @@ function AppShell(): JSX.Element {
             {route === 'appointment' ? <AppointmentPage /> : null}
             {route === 'legal' ? <LegalPage /> : null}
             {route === 'login' ? <LoginPage onSuccess={() => setRoute('home')} /> : null}
+            {route === 'me' ? <PatientPortalPage /> : null}
           </Suspense>
         </ErrorBoundary>
       </main>
 
+      <CookieBanner
+        text={t('cookie.banner.text')}
+        acceptLabel={t('cookie.banner.accept')}
+        essentialLabel={t('cookie.banner.essential')}
+      />
       <footer className="mt-16 border-t border-ink-strong/10 bg-surface-white py-8 text-center text-sm text-ink-soft dark:border-surface-white/10 dark:bg-ink-strong dark:text-ink-soft">
         <div className="container-reading">{t('footer.copyright')}</div>
       </footer>
