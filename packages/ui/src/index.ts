@@ -21,3 +21,4 @@ export { ToastProvider, useToast, type ToastType, type ToastItem } from './toast
 export { Skeleton, type SkeletonProps } from './Skeleton.js';
 export { CookieBanner, getCookieConsent, setCookieConsent } from './CookieBanner.js';
 export { Dialog, type DialogProps } from './Dialog.js';
+export { DatePicker, type DatePickerProps } from './DatePicker.js';
