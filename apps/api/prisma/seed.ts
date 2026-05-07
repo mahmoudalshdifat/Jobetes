@@ -142,7 +142,19 @@ async function main() {
     },
   });
 
-  console.log(`✅ Seeded ${2} patients, ${1} intakes, ${1} triages, ${1} appointments, ${3} audit logs, ${1} messages`);
+  // Seed staff: Dr. Mahmoud Al-Shdaifat
+  await prisma.staff.upsert({
+    where: { supabaseUserId: '00000000-0000-0000-0000-000000000001' },
+    update: {},
+    create: {
+      supabaseUserId: '00000000-0000-0000-0000-000000000001',
+      fullName: 'Dr. Mahmoud Al-Shdaifat',
+      email: 'dr.mahmoud@jobetes.diggai.de',
+      role: 'doctor',
+    },
+  });
+
+  console.log(`✅ Seeded ${2} patients, ${1} intakes, ${1} triages, ${1} appointments, ${3} audit logs, ${1} messages, ${1} staff`);
 }
 
 main()

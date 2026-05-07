@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { AppointmentRequestSchema, AppointmentStatusSchema } from '@jobetes/shared-schemas';
 import { requireAuth } from '../auth.js';
+import type { IntakeRepo } from '../persistence/index.js';
 
 /**
  * Phase-0 appointment requests live in process memory. The doctor receives
@@ -65,6 +66,7 @@ const UpdateAppointmentSchema = z.object({
 
 export async function registerAppointmentRoutes(
   app: FastifyInstance,
+  repo: IntakeRepo,
   notifyWebhookUrl = '',
 ): Promise<void> {
   app.post('/appointments', async (request, reply) => {
@@ -132,10 +134,7 @@ export async function registerAppointmentRoutes(
   // Admin/doctor: list all appointments
   app.get('/admin/appointments', async (request, reply) => {
     const user = await requireAuth(request);
-    const doctorIds = new Set(
-      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-    );
-    if (doctorIds.size > 0 && !doctorIds.has(user.supabaseUserId)) {
+    if (!(await repo.isStaff(user.supabaseUserId, 'doctor'))) {
       return reply.status(404).send({ error: 'not_found' });
     }
     const all = Array.from(requests.values()).sort(
@@ -159,10 +158,7 @@ export async function registerAppointmentRoutes(
   // Admin/doctor: update appointment status
   app.patch('/admin/appointments/:id', async (request, reply) => {
     const user = await requireAuth(request);
-    const doctorIds = new Set(
-      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-    );
-    if (doctorIds.size > 0 && !doctorIds.has(user.supabaseUserId)) {
+    if (!(await repo.isStaff(user.supabaseUserId, 'doctor'))) {
       return reply.status(404).send({ error: 'not_found' });
     }
     const { id } = request.params as { id: string };

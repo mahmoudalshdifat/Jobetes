@@ -73,4 +73,12 @@ describe('InMemoryIntakeRepo', () => {
     const repo = new InMemoryIntakeRepo();
     expect(await repo.claimByPhone('user', '+962799123456')).toBeNull();
   });
+
+  it('isStaff returns false by default; true after registerDoctor', async () => {
+    const repo = new InMemoryIntakeRepo();
+    expect(await repo.isStaff('any-id', 'doctor')).toBe(false);
+    repo.registerDoctor('doc-1');
+    expect(await repo.isStaff('doc-1', 'doctor')).toBe(true);
+    expect(await repo.isStaff('doc-1', 'admin')).toBe(false);
+  });
 });

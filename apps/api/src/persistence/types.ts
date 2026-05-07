@@ -75,4 +75,9 @@ export interface IntakeRepo {
    * Update patient profile fields (GDPR Art. 16 right to rectification).
    */
   updatePatient(supabaseUserId: string, data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<boolean>;
+  /**
+   * Check if a Supabase user ID belongs to an active staff member with the given role.
+   * Falls back to DOCTOR_SUPABASE_USER_IDS env var when no DB is connected.
+   */
+  isStaff(supabaseUserId: string, role: 'doctor' | 'admin' | 'nurse' | 'operator'): Promise<boolean>;
 }

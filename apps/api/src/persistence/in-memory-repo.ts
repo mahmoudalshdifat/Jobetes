@@ -130,4 +130,25 @@ export class InMemoryIntakeRepo implements IntakeRepo {
   async updatePatient(_supabaseUserId: string, _data: Partial<{ firstName: string; lastName: string; email: string; phone: string }>): Promise<boolean> {
     return false;
   }
+
+  private readonly doctorIds = new Set<string>();
+
+  async isStaff(supabaseUserId: string, role: 'doctor' | 'admin' | 'nurse' | 'operator'): Promise<boolean> {
+    // Phase 0: fall back to env var for backward compatibility
+    const envIds = new Set(
+      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+    if (envIds.size > 0 && envIds.has(supabaseUserId)) return true;
+    // Also support runtime registration for tests
+    if (role === 'doctor' && this.doctorIds.has(supabaseUserId)) return true;
+    return false;
+  }
+
+  /** Test helper: register a doctor ID at runtime. */
+  registerDoctor(supabaseUserId: string): void {
+    this.doctorIds.add(supabaseUserId);
+  }
 }

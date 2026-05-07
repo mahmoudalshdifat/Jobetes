@@ -446,4 +446,19 @@ export class PrismaIntakeRepo implements IntakeRepo {
     });
     return true;
   }
+
+  async isStaff(supabaseUserId: string, role: 'doctor' | 'admin' | 'nurse' | 'operator'): Promise<boolean> {
+    const staff = await this.client.staff.findFirst({
+      where: { supabaseUserId, role, deletedAt: null },
+    });
+    if (staff) return true;
+    // Fallback to env var for migration period
+    const envIds = new Set(
+      (process.env.DOCTOR_SUPABASE_USER_IDS ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+    return role === 'doctor' && envIds.has(supabaseUserId);
+  }
 }
