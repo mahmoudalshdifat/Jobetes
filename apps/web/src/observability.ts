@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import type { Metric } from 'web-vitals';
 
 /**
  * Web-side observability. Initialized only when `VITE_SENTRY_DSN` is set —
@@ -53,5 +54,34 @@ export function initObservability(): void {
       if (event.extra) event.extra = scrub(event.extra);
       return event;
     },
+  });
+}
+
+/**
+ * Forward a Web Vitals metric to Sentry as a custom measurement. No-op
+ * when Sentry isn't initialized (DSN missing). Uses `setMeasurement` so
+ * vitals attach to the current pageload transaction; falls back to a
+ * structured breadcrumb so the metric is still visible in event payloads
+ * when no transaction is active.
+ *
+ * Names follow Sentry's `vital.<name>` convention. Values stay numeric
+ * — no URLs, no PHI.
+ */
+export function reportVitalToSentry(metric: Metric): void {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  const name = `vital.${metric.name.toLowerCase()}`;
+  // Try the modern API; if it isn't available (no active transaction),
+  // record a breadcrumb so the data isn't lost.
+  const setMeasurement = (Sentry as unknown as { setMeasurement?: (n: string, v: number, u: string) => void })
+    .setMeasurement;
+  const unit = metric.name === 'CLS' ? 'none' : 'millisecond';
+  if (typeof setMeasurement === 'function') {
+    setMeasurement(name, metric.value, unit);
+  }
+  Sentry.addBreadcrumb({
+    category: 'web-vital',
+    level: 'info',
+    message: `${metric.name} ${metric.value.toFixed(2)} (${metric.rating})`,
+    data: { id: metric.id, value: metric.value, rating: metric.rating, navigationType: metric.navigationType },
   });
 }

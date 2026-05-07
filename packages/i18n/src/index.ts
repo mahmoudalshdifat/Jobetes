@@ -48,3 +48,7 @@ export const resources = {
 } as const;
 
 export type TranslationKey = keyof typeof en;
+
+// `lint.ts` uses node:fs APIs and is a CI/test-only utility. Import it
+// directly from `./lint` in test files — we do NOT re-export it here
+// because the browser bundle would otherwise try to ship Node built-ins.
