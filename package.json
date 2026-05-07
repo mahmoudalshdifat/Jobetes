@@ -26,7 +26,8 @@
     "quant": "turbo run typecheck lint test build",
     "doctor": "pnpm quant",
     "clean": "turbo run clean && rm -rf node_modules",
-    "smoke-test": "node scripts/smoke-test.mjs"
+    "smoke-test": "node scripts/smoke-test.mjs",
+    "i18n:lint": "pnpm --filter @jobetes/i18n exec vitest run src/lint.test.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",

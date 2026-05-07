@@ -48,6 +48,11 @@ jobs:
         env:
           VITE_BASE: /
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          # Source-map upload only fires when all 3 are set; plugin no-ops otherwise
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
 
       - name: Build doctor portal (subpath)
         run: pnpm --filter @jobetes/doctor build

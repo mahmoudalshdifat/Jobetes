@@ -34,6 +34,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - name: i18n lint (catches missing translation keys + dynamic key usages)
+        run: pnpm i18n:lint
       - run: pnpm coverage
       - run: pnpm build
       - name: Bundle-size budget
