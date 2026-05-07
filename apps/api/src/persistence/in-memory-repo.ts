@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { PatientIntake } from '@jobetes/shared-schemas';
-import type { IntakeRepo, IntakeRecord } from './types.js';
+import type { AppointmentRequest, PatientIntake } from '@jobetes/shared-schemas';
+import type { AppointmentRecord, AppointmentUpdate, IntakeRepo, IntakeRecord } from './types.js';
 
 /**
  * Phase-0 default. Holds intake IDs in process memory; the patient payload
@@ -11,6 +11,7 @@ export class InMemoryIntakeRepo implements IntakeRepo {
   readonly kind = 'memory' as const;
   private readonly store = new Map<string, IntakeRecord>();
   private readonly userToPhone = new Map<string, string>();
+  private readonly appointments = new Map<string, AppointmentRecord>();
 
   async create(_data: PatientIntake): Promise<IntakeRecord> {
     const id = randomUUID();
@@ -22,6 +23,56 @@ export class InMemoryIntakeRepo implements IntakeRepo {
 
   async findById(id: string): Promise<IntakeRecord | null> {
     return this.store.get(id) ?? null;
+  }
+
+  async createAppointment(data: AppointmentRequest): Promise<AppointmentRecord> {
+    const id = randomUUID();
+    const receivedAt = new Date().toISOString();
+    const record: AppointmentRecord = {
+      id,
+      receivedAt,
+      status: 'requested',
+      patientName: data.patientName,
+      phone: data.phone,
+      preferredLocale: data.preferredLocale,
+      reason: data.reason,
+      preferredWindow: data.preferredWindow,
+      preferredDates: data.preferredDates,
+      notes: data.notes,
+    };
+    this.appointments.set(id, record);
+    return record;
+  }
+
+  async findAppointmentById(id: string): Promise<AppointmentRecord | null> {
+    return this.appointments.get(id) ?? null;
+  }
+
+  async findAppointmentsByPhone(phone: string): Promise<AppointmentRecord[]> {
+    return Array.from(this.appointments.values())
+      .filter((appointment) => appointment.phone === phone)
+      .sort((left, right) => new Date(right.receivedAt).getTime() - new Date(left.receivedAt).getTime());
+  }
+
+  async findAllAppointments(): Promise<AppointmentRecord[]> {
+    return Array.from(this.appointments.values()).sort(
+      (left, right) => new Date(right.receivedAt).getTime() - new Date(left.receivedAt).getTime(),
+    );
+  }
+
+  async updateAppointment(
+    id: string,
+    update: AppointmentUpdate,
+  ): Promise<Pick<AppointmentRecord, 'id' | 'status' | 'scheduledAt'> | null> {
+    const appointment = this.appointments.get(id);
+    if (!appointment) return null;
+    const next = {
+      ...appointment,
+      status: update.status ?? appointment.status,
+      scheduledAt: update.scheduledAt ?? appointment.scheduledAt,
+    };
+    this.appointments.set(id, next);
+    return { id: next.id, status: next.status, scheduledAt: next.scheduledAt };
   }
 
   async findByUser(_supabaseUserId: string): Promise<IntakeRecord[]> {

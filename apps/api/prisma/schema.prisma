@@ -152,19 +152,27 @@ model Triage {
 }
 
 model Appointment {
-  id          String             @id @default(uuid()) @db.Uuid
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id              String             @id @default(uuid()) @db.Uuid
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
-  patient     Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId   String             @db.Uuid
+  patient         Patient?           @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  patientId       String?            @db.Uuid
 
-  status      AppointmentStatus  @default(requested)
-  requestedAt DateTime           @default(now())
-  scheduledAt DateTime?
-  notes       String?            // doctor-only notes
+  patientName     String
+  phone           String
+  preferredLocale Locale
+  reason          String
+  preferredWindow String
+  preferredDates  String[]
+
+  status          AppointmentStatus  @default(requested)
+  requestedAt     DateTime           @default(now())
+  scheduledAt     DateTime?
+  notes           String?            // patient context or doctor follow-up notes
 
   @@index([patientId, status])
+  @@index([phone, status])
   @@index([status])
 }
 

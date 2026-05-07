@@ -1,8 +1,27 @@
-import type { PatientIntake } from '@jobetes/shared-schemas';
+import type { AppointmentRequest, AppointmentStatus, PatientIntake } from '@jobetes/shared-schemas';
 
 export type IntakeRecord = {
   id: string;
   receivedAt: string;
+};
+
+export type AppointmentRecord = {
+  id: string;
+  receivedAt: string;
+  status: AppointmentStatus;
+  patientName: string;
+  phone: string;
+  preferredLocale: string;
+  reason: string;
+  preferredWindow: string;
+  preferredDates: string[];
+  notes?: string;
+  scheduledAt?: string;
+};
+
+export type AppointmentUpdate = {
+  status?: AppointmentStatus;
+  scheduledAt?: string;
 };
 
 /**
@@ -18,6 +37,11 @@ export interface IntakeRepo {
   readonly kind: 'memory' | 'prisma';
   create(data: PatientIntake): Promise<IntakeRecord>;
   findById(id: string): Promise<IntakeRecord | null>;
+  createAppointment(data: AppointmentRequest): Promise<AppointmentRecord>;
+  findAppointmentById(id: string): Promise<AppointmentRecord | null>;
+  findAppointmentsByPhone(phone: string): Promise<AppointmentRecord[]>;
+  findAllAppointments(): Promise<AppointmentRecord[]>;
+  updateAppointment(id: string, update: AppointmentUpdate): Promise<Pick<AppointmentRecord, 'id' | 'status' | 'scheduledAt'> | null>;
   count(): Promise<number>;
   /**
    * Patient-scoped intake list. In-memory adapter has no patient concept,

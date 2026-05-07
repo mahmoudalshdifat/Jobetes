@@ -1,8 +1,8 @@
-# Fly.io configuration for the Jobetes API.
-# Region `fra` (Frankfurt) — keeps EU-resident processing.
-# Reference: https://fly.io/docs/reference/configuration/
+# Fly.io configuration for the Jobetes API — STAGING environment.
+# Region `fra` (Frankfurt) — mirrors production for EU data residency.
+# Smaller VM, auto-stop enabled to minimize cost.
 
-app = "jobetes-api"
+app = "jobetes-api-staging"
 primary_region = "fra"
 
 [build]
@@ -12,16 +12,16 @@ primary_region = "fra"
 [env]
   PORT = "3000"
   HOST = "0.0.0.0"
-  NODE_ENV = "production"
-  LOG_LEVEL = "info"
-  CORS_ORIGIN = "https://jobetes.diggai.de,https://www.jobetes.diggai.de"
+  NODE_ENV = "staging"
+  LOG_LEVEL = "debug"
+  CORS_ORIGIN = "https://staging.jobetes.diggai.de,http://localhost:5173,http://localhost:4173"
 
 [http_service]
   internal_port = 3000
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1  # keep 1 warm for JO evening traffic (UTC+3)
+  min_machines_running = 0  # scale to zero when idle (cost optimisation)
   processes = ["app"]
 
   [[http_service.checks]]
@@ -34,4 +34,4 @@ primary_region = "fra"
 [[vm]]
   cpu_kind = "shared"
   cpus = 1
-  memory_mb = 512
+  memory_mb = 256

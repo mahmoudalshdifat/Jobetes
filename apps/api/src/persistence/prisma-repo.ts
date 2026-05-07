@@ -1,6 +1,6 @@
-import type { PatientIntake } from '@jobetes/shared-schemas';
+import type { AppointmentRequest, PatientIntake } from '@jobetes/shared-schemas';
 import { PrismaClient } from '@prisma/client';
-import type { IntakeRecord, IntakeRepo } from './types.js';
+import type { AppointmentRecord, AppointmentUpdate, IntakeRecord, IntakeRepo } from './types.js';
 
 /**
  * Phase-1 Postgres-backed repo. Persists Patient + Intake + Consent within
@@ -93,6 +93,196 @@ export class PrismaIntakeRepo implements IntakeRepo {
       select: { id: true, createdAt: true },
     });
     return row ? { id: row.id, receivedAt: row.createdAt.toISOString() } : null;
+  }
+
+  async createAppointment(data: AppointmentRequest): Promise<AppointmentRecord> {
+    const patient = await this.client.patient.findUnique({
+      where: { phone: data.phone },
+      select: { id: true },
+    });
+
+    const appointment = await this.client.appointment.create({
+      data: {
+        patientId: patient?.id ?? null,
+        patientName: data.patientName,
+        phone: data.phone,
+        preferredLocale: data.preferredLocale,
+        reason: data.reason,
+        preferredWindow: data.preferredWindow,
+        preferredDates: data.preferredDates,
+        notes: data.notes ?? null,
+      },
+      select: {
+        id: true,
+        requestedAt: true,
+        status: true,
+        patientName: true,
+        phone: true,
+        preferredLocale: true,
+        reason: true,
+        preferredWindow: true,
+        preferredDates: true,
+        notes: true,
+        scheduledAt: true,
+      },
+    });
+
+    await this.client.auditLog.create({
+      data: {
+        actorRole: 'patient',
+        actorId: patient?.id ?? null,
+        event: 'appointment.requested',
+        resourceId: appointment.id,
+      },
+    });
+
+    return {
+      id: appointment.id,
+      receivedAt: appointment.requestedAt.toISOString(),
+      status: appointment.status,
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: appointment.notes ?? undefined,
+      scheduledAt: appointment.scheduledAt?.toISOString(),
+    };
+  }
+
+  async findAppointmentById(id: string): Promise<AppointmentRecord | null> {
+    const appointment = await this.client.appointment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        requestedAt: true,
+        status: true,
+        patientName: true,
+        phone: true,
+        preferredLocale: true,
+        reason: true,
+        preferredWindow: true,
+        preferredDates: true,
+        notes: true,
+        scheduledAt: true,
+      },
+    });
+    if (!appointment) return null;
+    return {
+      id: appointment.id,
+      receivedAt: appointment.requestedAt.toISOString(),
+      status: appointment.status,
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: appointment.notes ?? undefined,
+      scheduledAt: appointment.scheduledAt?.toISOString(),
+    };
+  }
+
+  async findAppointmentsByPhone(phone: string): Promise<AppointmentRecord[]> {
+    const appointments = await this.client.appointment.findMany({
+      where: { phone },
+      orderBy: { requestedAt: 'desc' },
+      select: {
+        id: true,
+        requestedAt: true,
+        status: true,
+        patientName: true,
+        phone: true,
+        preferredLocale: true,
+        reason: true,
+        preferredWindow: true,
+        preferredDates: true,
+        notes: true,
+        scheduledAt: true,
+      },
+    });
+    return appointments.map((appointment) => ({
+      id: appointment.id,
+      receivedAt: appointment.requestedAt.toISOString(),
+      status: appointment.status,
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: appointment.notes ?? undefined,
+      scheduledAt: appointment.scheduledAt?.toISOString(),
+    }));
+  }
+
+  async findAllAppointments(): Promise<AppointmentRecord[]> {
+    const appointments = await this.client.appointment.findMany({
+      orderBy: { requestedAt: 'desc' },
+      select: {
+        id: true,
+        requestedAt: true,
+        status: true,
+        patientName: true,
+        phone: true,
+        preferredLocale: true,
+        reason: true,
+        preferredWindow: true,
+        preferredDates: true,
+        notes: true,
+        scheduledAt: true,
+      },
+    });
+    return appointments.map((appointment) => ({
+      id: appointment.id,
+      receivedAt: appointment.requestedAt.toISOString(),
+      status: appointment.status,
+      patientName: appointment.patientName,
+      phone: appointment.phone,
+      preferredLocale: appointment.preferredLocale,
+      reason: appointment.reason,
+      preferredWindow: appointment.preferredWindow,
+      preferredDates: appointment.preferredDates,
+      notes: appointment.notes ?? undefined,
+      scheduledAt: appointment.scheduledAt?.toISOString(),
+    }));
+  }
+
+  async updateAppointment(
+    id: string,
+    update: AppointmentUpdate,
+  ): Promise<Pick<AppointmentRecord, 'id' | 'status' | 'scheduledAt'> | null> {
+    try {
+      const appointment = await this.client.appointment.update({
+        where: { id },
+        data: {
+          status: update.status,
+          scheduledAt: update.scheduledAt ? new Date(update.scheduledAt) : undefined,
+        },
+        select: { id: true, status: true, scheduledAt: true },
+      });
+
+      await this.client.auditLog.create({
+        data: {
+          actorRole: 'doctor',
+          event: 'appointment.updated',
+          resourceId: appointment.id,
+          metadata: {
+            status: appointment.status,
+            scheduledAt: appointment.scheduledAt?.toISOString(),
+          },
+        },
+      });
+
+      return {
+        id: appointment.id,
+        status: appointment.status,
+        scheduledAt: appointment.scheduledAt?.toISOString(),
+      };
+    } catch {
+      return null;
+    }
   }
 
   async findByUser(supabaseUserId: string): Promise<IntakeRecord[]> {
@@ -195,6 +385,12 @@ export class PrismaIntakeRepo implements IntakeRepo {
       })),
       appointments: patient.appointments.map((a) => ({
         id: a.id,
+        patientName: a.patientName,
+        phone: a.phone,
+        preferredLocale: a.preferredLocale,
+        reason: a.reason,
+        preferredWindow: a.preferredWindow,
+        preferredDates: a.preferredDates,
         status: a.status,
         requestedAt: a.requestedAt,
         scheduledAt: a.scheduledAt,
