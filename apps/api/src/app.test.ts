@@ -87,4 +87,15 @@ describe('API smoke', () => {
     expect(body.disclaimer).toMatch(/911|112|emergency/iu);
     expect(body.modelMeta.provider).toBe('mock');
   });
+
+  it('POST /v1/intake mirrors POST /intake (versioned route)', async () => {
+    const res = await app.inject({ method: 'POST', url: '/v1/intake', payload: validIntakeBody });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toHaveProperty('id');
+  });
+
+  it('GET /v1/health does NOT exist (health is unversioned)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/health' });
+    expect(res.statusCode).toBe(404);
+  });
 });

@@ -54,7 +54,7 @@ describe('JobetesApiClient', () => {
     await new JobetesApiClient({ transport: 'edge' }).doctorProfile();
     expect(lastUrl).toBe('/doctor-profile');
     await new JobetesApiClient({ transport: 'fastify' }).doctorProfile();
-    expect(lastUrl).toBe('/api/doctor/profile');
+    expect(lastUrl).toBe('/api/v1/doctor/profile');
   });
 
   it('honors custom baseUrl with trailing-slash strip', async () => {

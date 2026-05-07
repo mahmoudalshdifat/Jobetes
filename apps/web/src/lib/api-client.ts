@@ -50,14 +50,14 @@ const PATHS: Record<Transport, Record<string, string>> = {
   },
   fastify: {
     health: '/health',
-    doctorProfile: '/doctor/profile',
-    intake: '/intake',
-    triage: '/ai/triage',
-    me: '/me',
-    myIntakes: '/me/intakes',
-    myAppointments: '/me/appointments',
-    claim: '/me/claim',
-    export: '/me/export',
+    doctorProfile: '/v1/doctor/profile',
+    intake: '/v1/intake',
+    triage: '/v1/ai/triage',
+    me: '/v1/me',
+    myIntakes: '/v1/me/intakes',
+    myAppointments: '/v1/me/appointments',
+    claim: '/v1/me/claim',
+    export: '/v1/me/export',
   },
 };
 

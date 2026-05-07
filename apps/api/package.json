@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
-    "db:setup": "prisma migrate deploy --schema prisma/schema.prisma && tsx scripts/seed.ts",
+    "db:setup": "prisma migrate deploy --schema prisma/schema.prisma && tsx prisma/seed.ts",
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:reset": "prisma migrate reset --schema prisma/schema.prisma --force",
     "postinstall": "prisma generate --schema prisma/schema.prisma || true"
@@ -45,5 +45,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

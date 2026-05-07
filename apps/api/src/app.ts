@@ -76,7 +76,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(cors, {
     origin: cfg.CORS_ORIGIN.split(',').map((o) => o.trim()),
     credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     maxAge: 600,
   });
   // Tiered rate limits — stricter on write endpoints to deter spam/abuse.
@@ -98,6 +98,17 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerOpenApi(app, cfg);
   attachAuth(app, cfg);
 
+  // API v1 — versioned routes (preferred)
+  await app.register(async (v1) => {
+    await registerDoctorRoutes(v1);
+    await registerIntakeRoutes(v1, intakeRepo, cfg.NOTIFY_WEBHOOK_URL);
+    await registerAppointmentRoutes(v1, cfg.NOTIFY_WEBHOOK_URL);
+    await registerMeRoutes(v1, intakeRepo);
+    await registerAdminRoutes(v1, intakeRepo);
+    await registerTriageRoutes(v1, cfg);
+  }, { prefix: '/v1' });
+
+  // Unversioned aliases — backward compatibility during transition
   await registerHealthRoutes(app, intakeRepo);
   await registerDoctorRoutes(app);
   await registerIntakeRoutes(app, intakeRepo, cfg.NOTIFY_WEBHOOK_URL);
