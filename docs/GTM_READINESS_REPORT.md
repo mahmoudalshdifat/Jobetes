@@ -126,7 +126,7 @@
 |---|-------|-----|
 | 1 | No `updatedAt` on Intake, Consent, Triage, Message, AuditLog | Add `@updatedAt` columns |
 | 2 | No soft deletes (`deletedAt`) | Add for GDPR recovery scenarios |
-| 3 | No DB-level `CHECK` constraints | e.g., `severity BETWEEN 0 AND 10` |
+| 3 | No DB-level `CHECK` constraints | ✅ Added: severity 0-10, symptomDurationDays ≥0, dateOfBirth ≤ today, scheduledAt > requestedAt, actorRole whitelist, Staff.role whitelist |
 | 4 | No composite index on `Triage(urgency, createdAt)` | Add for dashboard filtering |
 | 5 | No backup/restore runbooks | Document in `docs/ops/` |
 | 6 | Minimal seed data | Create realistic dev seeds for testing |
