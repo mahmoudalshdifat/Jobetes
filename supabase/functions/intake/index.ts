@@ -79,75 +79,16 @@ Deno.serve(async (req) => {
 
   const sb = SB;
 
-  const { data: patient, error: pErr } = await sb
-    .from('Patient')
-    .upsert(
-      {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        dateOfBirth: body.dateOfBirth,
-        gender: body.gender,
-        preferredLocale: body.preferredLocale,
-        phone: body.phone,
-        email: body.email ?? null,
-      },
-      { onConflict: 'phone' },
-    )
-    .select('id')
-    .single();
-  if (pErr)
-    return new Response(JSON.stringify({ error: 'db_patient', detail: pErr.message }), {
+  // Atomic intake creation via PostgreSQL RPC — replaces sequential inserts
+  // with a single transaction. See migration: 20260506194000_atomic_intake_function.sql
+  const { data: result, error: rpcErr } = await sb.rpc('create_intake', { payload: body });
+  if (rpcErr) {
+    return new Response(JSON.stringify({ error: 'db_intake', detail: rpcErr.message }), {
       status: 500,
       headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
-
-  const { data: consent, error: cErr } = await sb
-    .from('Consent')
-    .insert({
-      privacyPolicyVersion: body.consent.privacyPolicyVersion ?? '2026-05-04',
-      acceptedAt: body.consent.acceptedAt ?? new Date().toISOString(),
-      presentedLocale: body.consent.presentedLocale ?? body.preferredLocale,
-      termsOfService: body.consent.termsOfService,
-      privacyPolicy: body.consent.privacyPolicy,
-      processingHealthData: body.consent.processingHealthData,
-      crossBorderTransfer: body.consent.crossBorderTransfer,
-      marketingOptIn: body.consent.marketingOptIn ?? false,
-      familyAccessOptIn: body.consent.familyAccessOptIn ?? false,
-    })
-    .select('id')
-    .single();
-  if (cErr)
-    return new Response(JSON.stringify({ error: 'db_consent', detail: cErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-    });
-
-  const { data: intake, error: iErr } = await sb
-    .from('Intake')
-    .insert({
-      patientId: patient.id,
-      consentId: consent.id,
-      payload: body,
-      severity: body.severity,
-      symptomDurationDays: body.symptomDurationDays ?? null,
-      ramadanContext: body.ramadanContext ?? false,
-      isFasting: body.isFasting ?? false,
-      prefersDoctorGender: body.prefersDoctorGender ?? null,
-    })
-    .select('id, createdAt')
-    .single();
-  if (iErr)
-    return new Response(JSON.stringify({ error: 'db_intake', detail: iErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-    });
-
-  await sb.from('AuditLog').insert({
-    actorRole: 'patient',
-    actorId: patient.id,
-    event: 'intake.created',
-    resourceId: intake.id,
-  });
+  }
+  const intake = result as { id: string; receivedAt: string; patientId: string; consentId: string };
 
   // Fire-and-forget patient confirmation email — never blocks the response.
   // notify-patient gracefully no-ops if RESEND_API_KEY / email are missing.

@@ -118,7 +118,7 @@
 | 1 | No API versioning (`/v1/...`) | Prefix routes or accept versioning in `Accept` header |
 | 2 | Doctor allowlist in env var (`DOCTOR_SUPABASE_USER_IDS`) | ✅ Moved to `Staff` table with `role` enum; env fallback for migration period |
 | 3 | No file upload security (needed for future medical attachments) | Plan virus scanning, size limits, encryption at rest |
-| 4 | Intake edge function is not atomic | Wrap Patient→Consent→Intake→AuditLog in Supabase RPC transaction |
+| 4 | Intake edge function is not atomic | ✅ Wrapped in `create_intake(jsonb)` PostgreSQL function; migration + edge function updated |
 | 5 | No audit log for data reads/exports/deletions | Add `intake.read`, `patient.read`, `patient.deleted` events |
 
 ### Database
