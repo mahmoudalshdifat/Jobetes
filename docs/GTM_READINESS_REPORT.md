@@ -228,13 +228,13 @@
 
 | Layer | Count |
 |-------|-------|
-| API unit tests | 62 |
+| API unit tests | 63 |
 | Web app unit tests | 51 |
 | Admin unit tests | 13 |
 | Doctor unit tests | 15 |
 | UI package tests | 82 |
 | E2E tests | 6 |
-| **Total** | **229** |
+| **Total** | **230** |
 
 ---
 
