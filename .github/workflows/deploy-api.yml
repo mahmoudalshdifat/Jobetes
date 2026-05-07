@@ -22,7 +22,7 @@ jobs:
       group: fly-deploy-${{ vars.FLY_APP_NAME }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Run database migrations (idempotent)
         if: ${{ vars.RUN_DB_MIGRATIONS == 'true' }}
