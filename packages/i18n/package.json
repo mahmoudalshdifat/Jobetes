@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@jobetes/shared-schemas": "workspace:*",
-    "i18next": "^24.2.0"
+    "i18next": "^26.0.10"
   },
   "devDependencies": {
     "@jobetes/eslint-config": "workspace:*",
