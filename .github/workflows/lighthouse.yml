@@ -29,9 +29,12 @@ jobs:
       - run: pnpm install --frozen-lockfile=false
       - run: pnpm --filter @jobetes/web build
       - name: Run Lighthouse CI
+        # cd into apps/web so `staticDistDir: "dist"` in lighthouserc.json
+        # resolves to apps/web/dist (not the non-existent <root>/dist).
+        working-directory: apps/web
         run: |
           pnpm dlx @lhci/cli@0.14.x autorun \
-            --config=apps/web/lighthouserc.json \
+            --config=lighthouserc.json \
             --upload.target=temporary-public-storage
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
@@ -39,5 +42,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: .lighthouseci/
+          path: apps/web/.lighthouseci/
           retention-days: 7

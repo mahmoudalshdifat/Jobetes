@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js';
 import { Button, Card, EmergencyBanner, cn, ToastProvider } from '@jobetes/ui';
+import { PUBLIC_FUNCTIONS as FUNCTIONS, pingAll, type ServiceStatus } from './service-status.js';
 
 /**
  * System admin console — separate from the doctor portal. Audience: the
@@ -19,14 +20,11 @@ type View =
   | { kind: 'unauthorized' }
   | { kind: 'dashboard'; session: Session };
 
-type ServiceStatus = { name: string; ok: boolean; latencyMs: number };
 type AdminSummary = {
   intakes: number;
   appointments: number;
   recentIntakes: { id: string; createdAt: string; severity: number; locale: string }[];
 } | null;
-
-const FUNCTIONS = ['health', 'doctor-profile', 'triage'] as const;
 
 let cached: SupabaseClient | null | undefined;
 function getSupabase(): SupabaseClient | null {
@@ -39,20 +37,6 @@ function getSupabase(): SupabaseClient | null {
   }
   cached = createClient(url, anon);
   return cached;
-}
-
-async function pingFunction(name: string): Promise<ServiceStatus> {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  if (!url) return { name, ok: false, latencyMs: -1 };
-  const start = performance.now();
-  try {
-    const res = await fetch(`${url}/functions/v1/${name}`, {
-      method: name === 'health' || name === 'doctor-profile' ? 'GET' : 'OPTIONS',
-    });
-    return { name, ok: res.ok || res.status === 405, latencyMs: Math.round(performance.now() - start) };
-  } catch {
-    return { name, ok: false, latencyMs: Math.round(performance.now() - start) };
-  }
 }
 
 /** Reset the module-level Supabase client cache — for Vitest only. */
@@ -87,7 +71,7 @@ function AdminApp(): JSX.Element {
 
   useEffect(() => {
     if (view.kind !== 'dashboard') return;
-    void Promise.all(FUNCTIONS.map(pingFunction)).then(setStatuses);
+    void pingAll(import.meta.env.VITE_SUPABASE_URL).then(setStatuses);
   }, [view]);
 
   const loadIntakes = useCallback(async () => {
