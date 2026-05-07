@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Button, Card, EmergencyBanner, Input, cn, ToastProvider } from '@jobetes/ui';
 import { getSupabase } from './supabase.js';
@@ -6,9 +6,26 @@ import { fetchAdminSummary, fetchAppointments, updateAppointment, type AdminSumm
 
 type View = 'loading' | 'login' | 'sent' | 'dashboard' | 'unauthorized' | 'mock';
 
+const VALID_VIEWS: View[] = ['loading', 'login', 'sent', 'dashboard', 'unauthorized', 'mock'];
+
+function parseHash(): { view: View; intakeId?: string } {
+  const raw = window.location.hash.replace(/^#\/?/, '');
+  const [viewPart, ...rest] = raw.split('/');
+  const view = VALID_VIEWS.includes(viewPart as View) ? (viewPart as View) : 'login';
+  const intakeId = rest.find((s) => s.startsWith('intake-'))?.replace('intake-', '');
+  return { view, intakeId };
+}
+
+function setHash(view: View, intakeId?: string): void {
+  const base = view === 'login' ? '' : view;
+  const suffix = intakeId ? `/intake-${intakeId}` : '';
+  window.location.hash = base + suffix;
+}
+
 function DoctorApp(): JSX.Element {
   const supabase = getSupabase();
-  const [view, setView] = useState<View>(supabase ? 'loading' : 'mock');
+  const initial = parseHash();
+  const [view, setViewState] = useState<View>(supabase ? initial.view : 'mock');
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +33,26 @@ function DoctorApp(): JSX.Element {
   const [selectedIntake, setSelectedIntake] = useState<AdminSummary['recentIntakes'][0] | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+
+  const setView = useCallback((v: View, intakeId?: string) => {
+    setViewState(v);
+    setHash(v, intakeId);
+  }, []);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const parsed = parseHash();
+      setViewState(parsed.view);
+      if (parsed.intakeId && summary) {
+        const found = summary.recentIntakes.find((i) => i.id === parsed.intakeId);
+        if (found) setSelectedIntake(found);
+      } else if (!parsed.intakeId) {
+        setSelectedIntake(null);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [summary]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -37,7 +74,7 @@ function DoctorApp(): JSX.Element {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, setView]);
 
   useEffect(() => {
     if (view !== 'dashboard' || !session) return;
@@ -181,7 +218,10 @@ function DoctorApp(): JSX.Element {
                       {summary.recentIntakes.map((r) => (
                         <tr
                           key={r.id}
-                          onClick={() => setSelectedIntake(r)}
+                          onClick={() => {
+                            setSelectedIntake(r);
+                            setHash('dashboard', r.id);
+                          }}
                           className={cn(
                             'border-b border-ink-strong/5 transition-colors cursor-pointer',
                             selectedIntake?.id === r.id ? 'bg-brand-primary/5' : 'hover:bg-surface-warm/30'
@@ -217,7 +257,7 @@ function DoctorApp(): JSX.Element {
                 title={selectedIntake.patientName || 'Patient details'}
                 description={`${selectedIntake.patientPhone}${selectedIntake.patientEmail ? ' · ' + selectedIntake.patientEmail : ''}`}
                 footer={
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedIntake(null)}>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedIntake(null); setHash('dashboard'); }}>
                     Close details
                   </Button>
                 }
