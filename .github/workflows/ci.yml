@@ -39,7 +39,7 @@ jobs:
       - name: Bundle-size budget
         run: pnpm --filter @jobetes/web perf:bundle-size
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: '**/coverage/**'
@@ -64,7 +64,7 @@ jobs:
         run: pnpm e2e
         continue-on-error: true
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
