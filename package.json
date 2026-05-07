@@ -27,7 +27,8 @@
     "doctor": "pnpm quant",
     "clean": "turbo run clean && rm -rf node_modules",
     "smoke-test": "node scripts/smoke-test.mjs",
-    "i18n:lint": "pnpm --filter @jobetes/i18n exec vitest run src/lint.test.ts"
+    "i18n:lint": "pnpm --filter @jobetes/i18n exec vitest run src/lint.test.ts",
+    "perf:audit": "node scripts/perf-audit.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
