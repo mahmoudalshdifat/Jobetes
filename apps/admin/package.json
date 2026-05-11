@@ -15,14 +15,14 @@
   "dependencies": {
     "@jobetes/ui": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
-    "react": "^18.3.1",
+    "react": "^19.2.6",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@jobetes/eslint-config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
-    "@types/react": "^18.3.18",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "vite-plugin-pwa": "^0.21.1",
